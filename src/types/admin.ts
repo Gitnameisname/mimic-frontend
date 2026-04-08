@@ -94,9 +94,12 @@ export interface AdminOrgDetail extends AdminOrg {
 // --- Role ---
 
 export interface AdminRole {
+  id: string;
   name: string;
   description?: string;
+  is_system: boolean;
   user_count: number;
+  created_at: string;
 }
 
 export interface AdminRoleDetail extends AdminRole {

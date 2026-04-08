@@ -1,4 +1,4 @@
-export { api, ApiError } from "./client";
+export { api, ApiError, getApiErrorMessage } from "./client";
 export { documentsApi } from "./documents";
 export { versionsApi } from "./versions";
 export { nodesApi } from "./nodes";

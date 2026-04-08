@@ -17,7 +17,21 @@ export const versionsApi = {
   saveDraft: (
     documentId: string,
     versionId: string,
-    body: { nodes?: unknown[]; title?: string; metadata?: Record<string, unknown> }
+    body: {
+      title?: string;
+      summary?: string;
+      label?: string;
+      change_summary?: string;
+      nodes?: Array<{
+        id?: string;
+        node_type: string;
+        order: number;
+        parent_id?: string | null;
+        title?: string;
+        content?: string;
+        metadata?: Record<string, unknown>;
+      }>;
+    }
   ) =>
     api.patch<Version>(
       `/api/v1/documents/${documentId}/versions/${versionId}/draft`,

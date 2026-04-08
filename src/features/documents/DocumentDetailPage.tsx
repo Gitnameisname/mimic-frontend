@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { documentsApi, versionsApi, nodesApi, workflowApi } from "@/lib/api";
+import { documentsApi, versionsApi, nodesApi, workflowApi, getApiErrorMessage } from "@/lib/api";
 import { toast } from "@/stores/uiStore";
 import { WorkflowStatusBadge } from "@/components/badge/WorkflowStatusBadge";
 import { DocumentTypeBadge } from "@/components/badge/DocumentTypeBadge";
@@ -16,6 +16,7 @@ import { NodeRenderer } from "./NodeRenderer";
 import { WorkflowActionModal } from "../workflow/WorkflowActionModal";
 import { RagPanel } from "../rag/RagPanel";
 import { formatDate, relativeTime } from "@/lib/utils";
+import { useAuthz } from "@/hooks/useAuthz";
 import type { WorkflowStatus, WorkflowAction } from "@/types";
 
 interface Props {
@@ -60,8 +61,10 @@ export function DocumentDetailPage({ documentId }: Props) {
       qc.invalidateQueries({ queryKey: ["version-latest", documentId] });
       setPublishConfirm(false);
     },
-    onError: () => toast("발행에 실패했습니다", "error"),
+    onError: (err) => toast(getApiErrorMessage(err, "발행에 실패했습니다"), "error"),
   });
+
+  const { can } = useAuthz();
 
   const doc = docQuery.data;
   const version = versionQuery.data;
@@ -121,37 +124,45 @@ export function DocumentDetailPage({ documentId }: Props) {
             <div className="mt-4 flex items-center gap-2 flex-wrap">
               {status === "DRAFT" && (
                 <>
-                  <Link href={`/documents/${documentId}/edit`}>
-                    <Button variant="secondary" size="sm">편집</Button>
-                  </Link>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => setActionModal("submit-review")}
-                  >
-                    검토 요청
-                  </Button>
+                  {can("document.edit") && (
+                    <Link href={`/documents/${documentId}/edit`}>
+                      <Button variant="secondary" size="sm">편집</Button>
+                    </Link>
+                  )}
+                  {can("workflow.submit-review") && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => setActionModal("submit-review")}
+                    >
+                      검토 요청
+                    </Button>
+                  )}
                 </>
               )}
               {status === "IN_REVIEW" && (
                 <>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => setActionModal("approve")}
-                  >
-                    승인
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => setActionModal("reject")}
-                  >
-                    반려
-                  </Button>
+                  {can("workflow.approve") && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => setActionModal("approve")}
+                    >
+                      승인
+                    </Button>
+                  )}
+                  {can("workflow.reject") && (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => setActionModal("reject")}
+                    >
+                      반려
+                    </Button>
+                  )}
                 </>
               )}
-              {status === "APPROVED" && (
+              {status === "APPROVED" && can("workflow.publish") && (
                 <Button
                   variant="primary"
                   size="sm"
@@ -160,7 +171,7 @@ export function DocumentDetailPage({ documentId }: Props) {
                   발행
                 </Button>
               )}
-              {status === "REJECTED" && (
+              {status === "REJECTED" && can("document.edit") && (
                 <Link href={`/documents/${documentId}/edit`}>
                   <Button variant="secondary" size="sm">편집</Button>
                 </Link>

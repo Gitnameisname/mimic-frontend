@@ -1,13 +1,18 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export class ApiError extends Error {
+  /** 백엔드 error.code (예: "NOT_FOUND", "PERMISSION_DENIED") */
+  code?: string;
+
   constructor(
     public status: number,
     message: string,
-    public data?: unknown
+    public data?: unknown,
+    code?: string
   ) {
     super(message);
     this.name = "ApiError";
+    this.code = code;
   }
 }
 
@@ -33,17 +38,40 @@ async function request<T>(
     } catch {
       data = undefined;
     }
-    throw new ApiError(
-      res.status,
-      (data as { detail?: string })?.detail ?? res.statusText,
-      data
-    );
+    const structured = data as {
+      error?: { code?: string; message?: string };
+      detail?: string;
+    } | undefined;
+    const message =
+      structured?.error?.message ??
+      structured?.detail ??
+      res.statusText;
+    const code = structured?.error?.code;
+    throw new ApiError(res.status, message, data, code);
   }
 
   // 204 No Content
   if (res.status === 204) return undefined as T;
 
   return res.json() as Promise<T>;
+}
+
+/**
+ * ApiError 또는 일반 Error에서 사용자에게 표시할 메시지를 추출한다.
+ *
+ * - 401: 인증 필요 고정 메시지
+ * - 403: 권한 없음 고정 메시지
+ * - 4xx: 백엔드 error.message (한국어/영어 혼용) — fallback으로 치환
+ * - 5xx / 기타: fallback 메시지
+ */
+export function getApiErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof ApiError) {
+    if (err.status === 401) return "로그인이 필요합니다.";
+    if (err.status === 403) return "이 작업을 수행할 권한이 없습니다.";
+    if (err.status === 409) return err.message || fallback;
+    if (err.status >= 400 && err.status < 500 && err.message) return err.message;
+  }
+  return fallback;
 }
 
 export const api = {

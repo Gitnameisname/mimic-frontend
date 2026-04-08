@@ -11,4 +11,7 @@ export interface Version {
   updated_at: string;
   change_reason?: string;
   metadata?: Record<string, unknown>;
+  /** Draft/Publish 시점에 저장된 문서 제목. 에디터 초기 제목 로드에 사용. */
+  title_snapshot?: string;
+  summary_snapshot?: string;
 }

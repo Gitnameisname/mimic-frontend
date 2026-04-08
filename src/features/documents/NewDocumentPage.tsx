@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
-import { documentsApi, versionsApi } from "@/lib/api";
+import { documentsApi, versionsApi, getApiErrorMessage } from "@/lib/api";
 import { toast } from "@/stores/uiStore";
 import { Button } from "@/components/button/Button";
 import { PageHeader } from "@/components/page/PageHeader";
@@ -34,7 +34,7 @@ export function NewDocumentPage() {
       toast("문서가 생성되었습니다", "success");
       router.push(`/documents/${doc.id}/edit`);
     },
-    onError: () => toast("문서 생성에 실패했습니다", "error"),
+    onError: (err) => toast(getApiErrorMessage(err, "문서 생성에 실패했습니다"), "error"),
   });
 
   const handleSubmit = () => {

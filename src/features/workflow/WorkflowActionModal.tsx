@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { workflowApi } from "@/lib/api";
+import { workflowApi, getApiErrorMessage } from "@/lib/api";
 import { toast } from "@/stores/uiStore";
 import { Button } from "@/components/button/Button";
 
@@ -60,7 +60,7 @@ export function WorkflowActionModal({
       toast(meta.successMsg, "success");
       onSuccess();
     },
-    onError: () => toast("처리에 실패했습니다. 다시 시도해 주세요.", "error"),
+    onError: (err) => toast(getApiErrorMessage(err, "처리에 실패했습니다. 다시 시도해 주세요."), "error"),
   });
 
   const canSubmit = action !== "reject" || reason.trim().length >= 1;

@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { documentsApi, versionsApi, nodesApi } from "@/lib/api";
+import { documentsApi, versionsApi, nodesApi, getApiErrorMessage } from "@/lib/api";
 import { toast } from "@/stores/uiStore";
 import { Button } from "@/components/button/Button";
 import { SkeletonBlock } from "@/components/feedback/SkeletonBlock";
 import { ErrorState } from "@/components/feedback/ErrorState";
+import { useAuthz } from "@/hooks/useAuthz";
 import type { DocumentNode } from "@/types";
 
 interface Props {
@@ -20,6 +21,8 @@ export function DocumentEditPage({ documentId }: Props) {
   const router = useRouter();
   const qc = useQueryClient();
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { can } = useAuthz();
+  const readOnly = !can("document.edit");
 
   const [title, setTitle] = useState("");
   const [nodes, setNodes] = useState<DocumentNode[]>([]);
@@ -44,16 +47,27 @@ export function DocumentEditPage({ documentId }: Props) {
   });
 
   // 초기 데이터 로드
+  // 제목 우선순위: version.title_snapshot(최신 저장본) → doc.title(생성 시 제목)
   useEffect(() => {
-    if (docQuery.data) setTitle(docQuery.data.title);
+    if (versionQuery.data?.title_snapshot ?? docQuery.data) {
+      setTitle(versionQuery.data?.title_snapshot ?? docQuery.data?.title ?? "");
+    }
     if (nodesQuery.data) setNodes(nodesQuery.data);
-  }, [docQuery.data, nodesQuery.data]);
+  }, [docQuery.data, versionQuery.data, nodesQuery.data]);
 
   const saveMutation = useMutation({
     mutationFn: () =>
       versionsApi.saveDraft(documentId, versionQuery.data!.id, {
         title,
-        nodes,
+        nodes: nodes.map((n) => ({
+          id: n.id,
+          node_type: n.node_type,
+          order: n.order,
+          parent_id: n.parent_id,
+          title: n.title,
+          content: n.content,
+          metadata: n.metadata,
+        })),
       }),
     onMutate: () => setSaveStatus("saving"),
     onSuccess: () => {
@@ -61,9 +75,9 @@ export function DocumentEditPage({ documentId }: Props) {
       setIsDirty(false);
       qc.invalidateQueries({ queryKey: ["document", documentId] });
     },
-    onError: () => {
+    onError: (err) => {
       setSaveStatus("error");
-      toast("저장에 실패했습니다", "error");
+      toast(getApiErrorMessage(err, "저장에 실패했습니다"), "error");
     },
   });
 
@@ -162,6 +176,19 @@ export function DocumentEditPage({ documentId }: Props) {
 
   if (docQuery.isError) {
     return <ErrorState retry={docQuery.refetch} className="mt-16" />;
+  }
+
+  if (readOnly) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-6">
+        <div className="text-4xl">🔒</div>
+        <p className="text-gray-700 font-medium">이 문서를 편집할 권한이 없습니다.</p>
+        <p className="text-sm text-gray-500">문서 편집은 작성자(AUTHOR) 이상의 역할이 필요합니다.</p>
+        <Button variant="secondary" size="sm" onClick={() => router.push(`/documents/${documentId}`)}>
+          문서로 돌아가기
+        </Button>
+      </div>
+    );
   }
 
   const rootNodes = nodes
