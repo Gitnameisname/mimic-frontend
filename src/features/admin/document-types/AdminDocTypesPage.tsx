@@ -91,9 +91,16 @@ export function AdminDocTypesPage() {
       key: "type_code",
       header: "타입 코드",
       render: (row) => (
-        <span className="font-mono text-sm font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
-          {row.type_code}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="font-mono text-sm font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+            {row.type_code}
+          </span>
+          {row.is_builtin && (
+            <span className="text-xs bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-medium">
+              내장
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -109,10 +116,14 @@ export function AdminDocTypesPage() {
       ),
     },
     {
-      key: "schema_field_count",
-      header: "스키마 필드",
-      width: "100px",
-      render: (row) => `${row.schema_field_count}개`,
+      key: "plugin_registered",
+      header: "플러그인",
+      width: "90px",
+      render: (row) => (
+        <span className={`text-xs font-medium ${row.plugin_registered ? "text-emerald-600" : "text-gray-400"}`}>
+          {row.plugin_registered ? "등록됨" : "미등록"}
+        </span>
+      ),
     },
     {
       key: "document_count",

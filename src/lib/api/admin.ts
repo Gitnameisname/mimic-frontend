@@ -15,6 +15,7 @@ import type {
   AuditLogDetail,
   AdminDocumentType,
   AdminDocumentTypeDetail,
+  DocTypePluginStatus,
   BackgroundJob,
   JobSummary,
   ApiKey,
@@ -223,6 +224,35 @@ export const adminApi = {
   deactivateDocumentType: (typeCode: string) =>
     api.delete<void>(
       `/api/v1/admin/document-types/${typeCode}`,
+      adminHeaders()
+    ),
+
+  // Phase 12: 플러그인 설정 관리
+  getDocumentTypePlugin: (typeCode: string) =>
+    api.get<SingleResponse<DocTypePluginStatus>>(
+      `/api/v1/admin/document-types/${typeCode}/plugin`,
+      adminHeaders()
+    ),
+  updateDocumentTypePlugin: (
+    typeCode: string,
+    body: {
+      chunking_config?: Record<string, unknown>;
+      rag_config?: Record<string, unknown>;
+      search_config?: Record<string, unknown>;
+      metadata_schema?: Record<string, unknown>;
+      editor_config?: Record<string, unknown>;
+      renderer_config?: Record<string, unknown>;
+      workflow_config?: Record<string, unknown>;
+    }
+  ) =>
+    api.put<SingleResponse<{ type_code: string; updated_fields: string[] }>>(
+      `/api/v1/admin/document-types/${typeCode}/plugin`,
+      body,
+      adminHeaders()
+    ),
+  getDocumentTypeMetadataSchema: (typeCode: string) =>
+    api.get<SingleResponse<{ type_code: string; schema: Record<string, unknown>; ui_schema: Record<string, unknown> }>>(
+      `/api/v1/admin/document-types/${typeCode}/plugin/schema`,
       adminHeaders()
     ),
 

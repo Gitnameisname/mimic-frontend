@@ -160,8 +160,10 @@ export interface AdminDocumentType {
   status: string;
   schema_field_count: number;
   document_count: number;
-  created_at: string;
-  updated_at: string;
+  is_builtin?: boolean;
+  plugin_registered?: boolean;
+  created_at: string | null;
+  updated_at?: string;
 }
 
 export interface AdminDocumentTypeDetail {
@@ -174,6 +176,48 @@ export interface AdminDocumentTypeDetail {
   document_count: number;
   created_at: string;
   updated_at: string;
+}
+
+// Phase 12: 플러그인 설정 관련 타입
+export interface ChunkingPluginConfig {
+  strategy?: string;
+  max_chunk_tokens?: number;
+  min_chunk_tokens?: number;
+  overlap_tokens?: number;
+  include_parent_context?: boolean;
+  parent_context_depth?: number;
+  index_version_policy?: string;
+  exclude_node_types?: string[];
+  merge_strategy?: string;
+}
+
+export interface RAGPluginConfig {
+  max_context_tokens?: number;
+  top_n?: number;
+  system_prompt?: string;
+}
+
+export interface SearchPluginConfig {
+  boost?: Record<string, number>;
+  searchable_node_types?: string[];
+  snippet?: { max_length?: number; highlight?: boolean };
+}
+
+export interface DocTypePluginStatus {
+  type_code: string;
+  is_builtin: boolean;
+  display_name: string;
+  description: string;
+  effective_config: {
+    chunking: Record<string, unknown>;
+    rag: Record<string, unknown>;
+    search_boost: Record<string, number>;
+    metadata_schema: Record<string, unknown>;
+    metadata_ui_schema: Record<string, unknown>;
+    workflow: { requires_approval: boolean; review_roles: string[] };
+    editor: { allowed_node_types: string[]; default_structure: unknown[] };
+  };
+  db_override: Record<string, unknown>;
 }
 
 // --- Background Job ---
