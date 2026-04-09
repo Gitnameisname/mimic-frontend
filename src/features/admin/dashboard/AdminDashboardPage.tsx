@@ -66,6 +66,9 @@ export function AdminDashboardPage() {
   const errors = errorsQ.data?.data ?? [];
   const auditLogs = auditQ.data?.data ?? [];
 
+  // Phase 10: 벡터화 지표
+  const vecStats = metrics?.vectorization;
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -105,6 +108,44 @@ export function AdminDashboardPage() {
           danger={(metrics?.indexing_failed ?? 0) > 0}
         />
       </div>
+
+      {/* Phase 10: 벡터화 현황 카드 */}
+      {vecStats && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-gray-700">벡터화 파이프라인 현황</h2>
+            <a
+              href="/admin/vectorization"
+              className="text-xs text-red-600 hover:text-red-700 font-medium"
+            >
+              상세 관리 →
+            </a>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <MetricCard
+              label="현재 청크"
+              value={vecStats.current_chunks ?? "-"}
+              sub="활성 벡터 청크"
+            />
+            <MetricCard
+              label="임베딩 완료"
+              value={vecStats.embedded_chunks ?? "-"}
+              sub="embedding 보유"
+            />
+            <MetricCard
+              label="임베딩 대기"
+              value={vecStats.pending_chunks ?? "-"}
+              sub="처리 필요"
+              danger={(vecStats.pending_chunks ?? 0) > 0}
+            />
+            <MetricCard
+              label="벡터화 문서"
+              value={vecStats.vectorized_docs ?? "-"}
+              sub="문서 단위"
+            />
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Component Health */}

@@ -11,6 +11,13 @@ export interface DashboardMetrics {
   failed_jobs_24h: number;
   audit_events_24h: number;
   indexing_failed: number;
+  // Phase 10: 벡터화 현황
+  vectorization?: {
+    current_chunks: number;
+    embedded_chunks: number;
+    pending_chunks: number;
+    vectorized_docs: number;
+  };
 }
 
 export interface ComponentHealth {

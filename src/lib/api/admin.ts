@@ -261,4 +261,119 @@ export const adminApi = {
       `/api/v1/admin/api-keys${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 20 })}`,
       adminHeaders()
     ),
+
+  // Phase 10: Vectorization
+  getVectorizationStats: () =>
+    api.get<SingleResponse<VectorizationStats>>(
+      "/api/v1/vectorization/stats",
+      adminHeaders()
+    ),
+  getChunks: (params: {
+    page?: number;
+    limit?: number;
+    document_id?: string;
+    document_type?: string;
+    is_current?: boolean;
+    has_embedding?: boolean;
+  } = {}) =>
+    api.get<SingleResponse<ChunkListResponse>>(
+      `/api/v1/vectorization/chunks${buildQueryString({
+        page: params.page ?? 1,
+        limit: params.limit ?? 20,
+        document_id: params.document_id,
+        document_type: params.document_type,
+        is_current: params.is_current ?? true,
+        has_embedding: params.has_embedding,
+      })}`,
+      adminHeaders()
+    ),
+  reindexDocument: (documentId: string) =>
+    api.post<SingleResponse<ReindexResult>>(
+      `/api/v1/vectorization/documents/${documentId}`,
+      {},
+      adminHeaders()
+    ),
+  reindexAll: (body: { document_type?: string; limit?: number } = {}) =>
+    api.post<SingleResponse<BatchReindexResult>>(
+      "/api/v1/vectorization/reindex-all",
+      body,
+      adminHeaders()
+    ),
+  cleanupChunks: (daysOld = 30) =>
+    api.post<SingleResponse<{ deleted: number }>>(
+      `/api/v1/vectorization/cleanup?days_old=${daysOld}`,
+      {},
+      adminHeaders()
+    ),
+  getTokenUsage: (params: { page?: number; limit?: number } = {}) =>
+    api.get<SingleResponse<TokenUsageListResponse>>(
+      `/api/v1/vectorization/token-usage${buildQueryString({ page: params.page ?? 1, limit: params.limit ?? 20 })}`,
+      adminHeaders()
+    ),
 };
+
+// Vectorization types
+export interface VectorizationStats {
+  chunks: { total: number; current: number; embedded: number; pending: number };
+  documents: { vectorized: number; total_published: number };
+  by_type: { document_type: string; chunk_count: number }[];
+  token_usage: { total_tokens: number; total_chunks_processed: number; total_jobs: number };
+}
+
+export interface ChunkItem {
+  id: string;
+  document_id: string;
+  version_id: string;
+  node_id: string | null;
+  chunk_index: number;
+  source_text: string;
+  node_path: string[];
+  document_type: string;
+  document_status: string;
+  embedding_model: string | null;
+  token_count: number;
+  is_current: boolean;
+  has_embedding: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChunkListResponse {
+  items: ChunkItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface ReindexResult {
+  document_id: string;
+  version_id: string;
+  chunks_created: number;
+  chunks_failed: number;
+  total_tokens: number;
+  model: string;
+  error: string | null;
+}
+
+export interface BatchReindexResult {
+  total: number;
+  succeeded: number;
+  failed: number;
+}
+
+export interface TokenUsageItem {
+  id: string;
+  job_id: string | null;
+  document_id: string | null;
+  model: string;
+  total_tokens: number;
+  chunk_count: number;
+  created_at: string;
+}
+
+export interface TokenUsageListResponse {
+  items: TokenUsageItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
