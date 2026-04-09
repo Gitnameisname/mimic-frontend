@@ -1,4 +1,5 @@
 import { api } from "./client";
+import { buildQueryString } from "@/lib/utils";
 import type {
   DashboardMetrics,
   DashboardHealth,
@@ -43,14 +44,7 @@ function adminHeaders(): RequestInit {
   return { headers };
 }
 
-function qs(params: Record<string, string | number | undefined>): string {
-  const p = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== "") p.set(k, String(v));
-  }
-  const s = p.toString();
-  return s ? `?${s}` : "";
-}
+// buildQueryString은 @/lib/utils에서 import
 
 // ---- Dashboard ----
 
@@ -85,7 +79,7 @@ export const adminApi = {
     status?: string;
   } = {}) =>
     api.get<ListResponse<AdminUser>>(
-      `/api/v1/admin/users${qs({ page: params.page ?? 1, page_size: params.page_size ?? 20, search: params.search, status: params.status })}`,
+      `/api/v1/admin/users${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 20, search: params.search, status: params.status })}`,
       adminHeaders()
     ),
   getUser: (userId: string) =>
@@ -119,7 +113,7 @@ export const adminApi = {
   // Organizations
   getOrgs: (params: { page?: number; page_size?: number; search?: string } = {}) =>
     api.get<ListResponse<AdminOrg>>(
-      `/api/v1/admin/organizations${qs({ page: params.page ?? 1, page_size: params.page_size ?? 20, search: params.search })}`,
+      `/api/v1/admin/organizations${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 20, search: params.search })}`,
       adminHeaders()
     ),
   getOrg: (orgId: string) =>
@@ -171,7 +165,7 @@ export const adminApi = {
     result?: string;
   } = {}) =>
     api.get<ListResponse<AuditLog>>(
-      `/api/v1/admin/audit-logs${qs({
+      `/api/v1/admin/audit-logs${buildQueryString({
         page: params.page ?? 1,
         page_size: params.page_size ?? 50,
         from: params.from,
@@ -191,7 +185,7 @@ export const adminApi = {
   // Document Types
   getDocumentTypes: (params: { status?: string; search?: string } = {}) =>
     api.get<ListResponse<AdminDocumentType>>(
-      `/api/v1/admin/document-types${qs({ status: params.status, search: params.search })}`,
+      `/api/v1/admin/document-types${buildQueryString({ status: params.status, search: params.search })}`,
       adminHeaders()
     ),
   getDocumentType: (typeCode: string) =>
@@ -240,7 +234,7 @@ export const adminApi = {
     job_type?: string;
   } = {}) =>
     api.get<ListResponse<BackgroundJob>>(
-      `/api/v1/admin/jobs${qs({ page: params.page ?? 1, page_size: params.page_size ?? 30, status: params.status, job_type: params.job_type })}`,
+      `/api/v1/admin/jobs${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 30, status: params.status, job_type: params.job_type })}`,
       adminHeaders()
     ),
   getJobSummary: () =>
@@ -257,14 +251,14 @@ export const adminApi = {
   // Indexing
   getIndexingJobs: (params: { page?: number; page_size?: number; status?: string } = {}) =>
     api.get<ListResponse<BackgroundJob>>(
-      `/api/v1/admin/indexing/jobs${qs({ page: params.page ?? 1, page_size: params.page_size ?? 30, status: params.status })}`,
+      `/api/v1/admin/indexing/jobs${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 30, status: params.status })}`,
       adminHeaders()
     ),
 
   // API Keys
   getApiKeys: (params: { page?: number; page_size?: number } = {}) =>
     api.get<ListResponse<ApiKey>>(
-      `/api/v1/admin/api-keys${qs({ page: params.page ?? 1, page_size: params.page_size ?? 20 })}`,
+      `/api/v1/admin/api-keys${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 20 })}`,
       adminHeaders()
     ),
 };

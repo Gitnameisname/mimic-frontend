@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { adminApi } from "@/lib/api/admin";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { DataTable, type Column } from "@/components/admin/DataTable";
+import { QueryLoader } from "@/components/feedback/QueryLoader";
 import type { SchemaField } from "@/types/admin";
 
 interface Props {
@@ -109,7 +110,7 @@ export function AdminDocTypeDetailPage({ typeCode }: Props) {
   const [showEdit, setShowEdit] = useState(false);
   const [deactivateConfirm, setDeactivateConfirm] = useState(false);
 
-  const { data, isLoading, isError } = useQuery({
+  const query = useQuery({
     queryKey: ["admin", "document-type", typeCode],
     queryFn: () => adminApi.getDocumentType(typeCode),
   });
@@ -122,8 +123,6 @@ export function AdminDocTypeDetailPage({ typeCode }: Props) {
       setDeactivateConfirm(false);
     },
   });
-
-  const dt = data?.data;
 
   const fieldColumns: Column<SchemaField>[] = [
     {
@@ -160,30 +159,21 @@ export function AdminDocTypeDetailPage({ typeCode }: Props) {
     },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="p-6 space-y-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse" />
-        ))}
-      </div>
-    );
-  }
-
-  if (isError || !dt) {
-    return (
-      <div className="p-6">
-        <p className="text-red-600">문서 유형 정보를 불러올 수 없습니다.</p>
-        <button onClick={() => router.back()} className="mt-2 text-sm text-gray-500 hover:underline">
-          ← 뒤로
-        </button>
-      </div>
-    );
-  }
-
-  const isActive = dt.status === "ACTIVE";
-
   return (
+    <QueryLoader
+      query={{ isLoading: query.isLoading, isError: query.isError, data: query.data?.data, refetch: query.refetch }}
+      error={
+        <div className="p-6">
+          <p className="text-red-600">문서 유형 정보를 불러올 수 없습니다.</p>
+          <button onClick={() => router.back()} className="mt-2 text-sm text-gray-500 hover:underline">
+            ← 뒤로
+          </button>
+        </div>
+      }
+    >
+    {(dt) => {
+    const isActive = dt.status === "ACTIVE";
+    return (
     <div className="p-6 space-y-6">
       <button
         onClick={() => router.back()}
@@ -327,5 +317,8 @@ export function AdminDocTypeDetailPage({ typeCode }: Props) {
         </div>
       )}
     </div>
+    );
+    }}
+    </QueryLoader>
   );
 }

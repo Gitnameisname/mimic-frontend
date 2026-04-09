@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { adminApi } from "@/lib/api/admin";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { Modal, ModalActions } from "@/components/feedback/Modal";
+import { FormField } from "@/components/form/FormField";
+import { useMutationWithToast } from "@/hooks/useMutationWithToast";
 import type { AdminDocumentType } from "@/types/admin";
 
 // ---- 생성 모달 ----
 
 function CreateDocTypeModal({ onClose }: { onClose: () => void }) {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState({
     type_code: "",
     display_name: "",
@@ -19,18 +21,17 @@ function CreateDocTypeModal({ onClose }: { onClose: () => void }) {
   });
   const [error, setError] = useState("");
 
-  const mutation = useMutation({
+  const mutation = useMutationWithToast({
     mutationFn: () =>
       adminApi.createDocumentType({
         type_code: form.type_code.trim().toUpperCase(),
         display_name: form.display_name.trim(),
         description: form.description.trim() || undefined,
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "document-types"] });
-      onClose();
-    },
-    onError: (e: Error) => setError(e.message),
+    successMessage: "문서 유형이 생성되었습니다.",
+    errorMessage: "문서 유형 생성에 실패했습니다.",
+    invalidateKeys: [["admin", "document-types"]],
+    onSuccess: () => onClose(),
   });
 
   function handleSubmit(e: React.FormEvent) {
@@ -42,65 +43,34 @@ function CreateDocTypeModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-5">새 문서 유형 추가</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">
-              타입 코드 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.type_code}
-              onChange={(e) => setForm((f) => ({ ...f, type_code: e.target.value }))}
-              placeholder="예: NOTICE, CONTRACT"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-300 uppercase"
-            />
-            <p className="text-xs text-gray-400 mt-0.5">영문 대문자/숫자/밑줄만 사용</p>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">
-              표시 이름 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.display_name}
-              onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))}
-              placeholder="예: 공지사항"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">설명</label>
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              placeholder="문서 유형에 대한 설명 (선택)"
-              rows={2}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 resize-none"
-            />
-          </div>
-          {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-          <div className="flex gap-2 pt-1">
-            <button
-              type="submit"
-              disabled={mutation.isPending}
-              className="flex-1 bg-red-600 text-white text-sm font-medium rounded-lg py-2 hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              {mutation.isPending ? "생성 중..." : "생성"}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 border border-gray-200 text-gray-600 text-sm rounded-lg py-2 hover:bg-gray-50 transition-colors"
-            >
-              취소
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <Modal title="새 문서 유형 추가" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <FormField
+          label="타입 코드" required
+          value={form.type_code}
+          onChange={(v) => setForm((f) => ({ ...f, type_code: v }))}
+          placeholder="예: NOTICE, CONTRACT"
+          inputClassName="font-mono uppercase"
+          hint="영문 대문자/숫자/밑줄만 사용"
+        />
+        <FormField
+          label="표시 이름" required
+          value={form.display_name}
+          onChange={(v) => setForm((f) => ({ ...f, display_name: v }))}
+          placeholder="예: 공지사항"
+        />
+        <FormField
+          label="설명"
+          type="textarea"
+          value={form.description}
+          onChange={(v) => setForm((f) => ({ ...f, description: v }))}
+          placeholder="문서 유형에 대한 설명 (선택)"
+          rows={2}
+        />
+        {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+        <ModalActions onClose={onClose} isPending={mutation.isPending} />
+      </form>
+    </Modal>
   );
 }
 

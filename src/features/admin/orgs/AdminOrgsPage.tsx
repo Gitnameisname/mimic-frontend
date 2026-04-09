@@ -6,83 +6,58 @@ import { adminApi } from "@/lib/api/admin";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pagination } from "@/components/admin/Pagination";
+import { Modal, ModalActions } from "@/components/feedback/Modal";
+import { FormField } from "@/components/form/FormField";
+import { useMutationWithToast } from "@/hooks/useMutationWithToast";
 import type { AdminOrg, AdminOrgDetail, OrgMember } from "@/types/admin";
 
 // ---- 생성 모달 ----
 
 function CreateOrgModal({ onClose }: { onClose: () => void }) {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState({ name: "", description: "" });
   const [error, setError] = useState("");
 
-  const mutation = useMutation({
+  const mutation = useMutationWithToast({
     mutationFn: () =>
       adminApi.createOrg({
         name: form.name.trim(),
         description: form.description.trim() || undefined,
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "orgs"] });
-      onClose();
-    },
-    onError: (e: Error) => setError(e.message),
+    successMessage: "조직이 생성되었습니다.",
+    errorMessage: "조직 생성에 실패했습니다.",
+    invalidateKeys: [["admin", "orgs"]],
+    onSuccess: () => onClose(),
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-5">조직 추가</h2>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setError("");
-            if (!form.name.trim()) return setError("조직 이름을 입력하세요.");
-            mutation.mutate();
-          }}
-          className="space-y-4"
-        >
-          <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">
-              조직 이름 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              placeholder="예: 개발팀"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">설명</label>
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              placeholder="조직 설명 (선택)"
-              rows={2}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 resize-none"
-            />
-          </div>
-          {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-          <div className="flex gap-2 pt-1">
-            <button
-              type="submit"
-              disabled={mutation.isPending}
-              className="flex-1 bg-red-600 text-white text-sm font-medium rounded-lg py-2 hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              {mutation.isPending ? "생성 중..." : "생성"}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 border border-gray-200 text-gray-600 text-sm rounded-lg py-2 hover:bg-gray-50 transition-colors"
-            >
-              취소
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <Modal title="조직 추가" onClose={onClose}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          setError("");
+          if (!form.name.trim()) return setError("조직 이름을 입력하세요.");
+          mutation.mutate();
+        }}
+        className="space-y-4"
+      >
+        <FormField
+          label="조직 이름" required
+          value={form.name}
+          onChange={(v) => setForm((f) => ({ ...f, name: v }))}
+          placeholder="예: 개발팀"
+        />
+        <FormField
+          label="설명"
+          type="textarea"
+          value={form.description}
+          onChange={(v) => setForm((f) => ({ ...f, description: v }))}
+          placeholder="조직 설명 (선택)"
+          rows={2}
+        />
+        {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+        <ModalActions onClose={onClose} isPending={mutation.isPending} />
+      </form>
+    </Modal>
   );
 }
 

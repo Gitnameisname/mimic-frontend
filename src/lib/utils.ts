@@ -5,6 +5,28 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * 객체에서 `undefined`/`null`/빈 문자열 필드를 제외하고 query string을 만든다.
+ *
+ * 사용 예:
+ * ```ts
+ * buildQueryString({ page: 1, q: "hello", status: undefined })
+ * // → "?page=1&q=hello"
+ * ```
+ */
+export function buildQueryString(
+  params: Record<string, string | number | boolean | undefined | null>
+): string {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== "") {
+      p.set(k, String(v));
+    }
+  }
+  const qs = p.toString();
+  return qs ? `?${qs}` : "";
+}
+
 /** "2026-04-08T10:00:00Z" → "2026-04-08" */
 export function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("ko-KR", {

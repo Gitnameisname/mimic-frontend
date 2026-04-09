@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { adminApi } from "@/lib/api/admin";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Pagination } from "@/components/admin/Pagination";
+import { Modal, ModalActions } from "@/components/feedback/Modal";
+import { FormField } from "@/components/form/FormField";
+import { useMutationWithToast } from "@/hooks/useMutationWithToast";
 import type { AdminUser } from "@/types/admin";
 
 const ROLES = ["VIEWER", "AUTHOR", "REVIEWER", "APPROVER", "ORG_ADMIN", "SUPER_ADMIN"] as const;
@@ -14,17 +17,15 @@ const ROLES = ["VIEWER", "AUTHOR", "REVIEWER", "APPROVER", "ORG_ADMIN", "SUPER_A
 // ---- 사용자 생성 모달 ----
 
 function CreateUserModal({ onClose }: { onClose: () => void }) {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState({ email: "", display_name: "", role_name: "VIEWER" });
   const [error, setError] = useState("");
 
-  const mutation = useMutation({
+  const mutation = useMutationWithToast({
     mutationFn: () => adminApi.createUser(form),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-      onClose();
-    },
-    onError: (e: Error) => setError(e.message),
+    successMessage: "사용자가 생성되었습니다.",
+    errorMessage: "사용자 생성에 실패했습니다.",
+    invalidateKeys: [["admin", "users"]],
+    onSuccess: () => onClose(),
   });
 
   function handleSubmit(e: React.FormEvent) {
@@ -36,66 +37,32 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-5">사용자 추가</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">
-              이메일 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              placeholder="user@example.com"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">
-              이름 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.display_name}
-              onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))}
-              placeholder="홍길동"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-600 block mb-1">역할</label>
-            <select
-              value={form.role_name}
-              onChange={(e) => setForm((f) => ({ ...f, role_name: e.target.value }))}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
-            >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
-          </div>
-          {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-          <div className="flex gap-2 pt-1">
-            <button
-              type="submit"
-              disabled={mutation.isPending}
-              className="flex-1 bg-red-600 text-white text-sm font-medium rounded-lg py-2 hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              {mutation.isPending ? "생성 중..." : "생성"}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 border border-gray-200 text-gray-600 text-sm rounded-lg py-2 hover:bg-gray-50 transition-colors"
-            >
-              취소
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <Modal title="사용자 추가" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <FormField
+          label="이메일" required
+          type="email"
+          value={form.email}
+          onChange={(v) => setForm((f) => ({ ...f, email: v }))}
+          placeholder="user@example.com"
+        />
+        <FormField
+          label="이름" required
+          value={form.display_name}
+          onChange={(v) => setForm((f) => ({ ...f, display_name: v }))}
+          placeholder="홍길동"
+        />
+        <FormField
+          label="역할"
+          type="select"
+          value={form.role_name}
+          onChange={(v) => setForm((f) => ({ ...f, role_name: v }))}
+          options={ROLES.map((r) => ({ label: r, value: r }))}
+        />
+        {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+        <ModalActions onClose={onClose} isPending={mutation.isPending} />
+      </form>
+    </Modal>
   );
 }
 

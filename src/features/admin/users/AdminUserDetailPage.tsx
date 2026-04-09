@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { adminApi } from "@/lib/api/admin";
 import { StatusBadge, SeverityBadge } from "@/components/admin/StatusBadge";
+import { QueryLoader } from "@/components/feedback/QueryLoader";
 
 interface Props {
   userId: string;
@@ -199,7 +200,7 @@ export function AdminUserDetailPage({ userId }: Props) {
   const [showAssignOrg, setShowAssignOrg] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
-  const { data, isLoading, isError } = useQuery({
+  const query = useQuery({
     queryKey: ["admin", "user", userId],
     queryFn: () => adminApi.getUser(userId),
   });
@@ -214,30 +215,19 @@ export function AdminUserDetailPage({ userId }: Props) {
     onSuccess: () => router.push("/admin/users"),
   });
 
-  const user = data?.data;
-
-  if (isLoading) {
-    return (
-      <div className="p-6 space-y-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse" />
-        ))}
-      </div>
-    );
-  }
-
-  if (isError || !user) {
-    return (
-      <div className="p-6">
-        <p className="text-red-600">사용자 정보를 불러올 수 없습니다.</p>
-        <button onClick={() => router.back()} className="mt-2 text-sm text-gray-500 hover:underline">
-          ← 뒤로
-        </button>
-      </div>
-    );
-  }
-
   return (
+    <QueryLoader
+      query={{ isLoading: query.isLoading, isError: query.isError, data: query.data?.data, refetch: query.refetch }}
+      error={
+        <div className="p-6">
+          <p className="text-red-600">사용자 정보를 불러올 수 없습니다.</p>
+          <button onClick={() => router.back()} className="mt-2 text-sm text-gray-500 hover:underline">
+            ← 뒤로
+          </button>
+        </div>
+      }
+    >
+    {(user) => (
     <div className="p-6 space-y-6">
       {/* Back */}
       <button
@@ -414,6 +404,8 @@ export function AdminUserDetailPage({ userId }: Props) {
         </div>
       )}
     </div>
+    )}
+    </QueryLoader>
   );
 }
 
