@@ -5,6 +5,8 @@ import { useMutation } from "@tanstack/react-query";
 import { workflowApi, getApiErrorMessage } from "@/lib/api";
 import { toast } from "@/stores/uiStore";
 import { Button } from "@/components/button/Button";
+import { DiffSummaryBanner } from "@/features/diff/DiffSummaryBanner";
+import { DiffViewerAuto } from "@/features/diff/DiffViewerAuto";
 
 type Action = "approve" | "reject" | "submit-review";
 
@@ -46,7 +48,11 @@ export function WorkflowActionModal({
 }: Props) {
   const [comment, setComment] = useState("");
   const [reason, setReason] = useState("");
+  const [showDiff, setShowDiff] = useState(false);
   const meta = ACTION_LABELS[action];
+
+  // approve/reject 시에만 diff 배너 표시
+  const isDiffVisible = action === "approve" || action === "reject";
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -68,8 +74,26 @@ export function WorkflowActionModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <h3 className="text-base font-semibold text-gray-900">{meta.title}</h3>
+
+        {/* 변경 내용 배너 (approve/reject 시) */}
+        {isDiffVisible && (
+          <div className="mt-4">
+            <DiffSummaryBanner
+              documentId={documentId}
+              versionId={versionId}
+              label="변경 내용 확인"
+              onToggleDetail={() => setShowDiff((v) => !v)}
+              showDetail={showDiff}
+            />
+            {showDiff && (
+              <div className="mt-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                <DiffViewerAuto documentId={documentId} versionId={versionId} />
+              </div>
+            )}
+          </div>
+        )}
 
         {action === "reject" && (
           <div className="mt-4">

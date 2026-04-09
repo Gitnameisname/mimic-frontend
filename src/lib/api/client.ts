@@ -1,4 +1,7 @@
+import { useAuthzStore } from "@/hooks/useAuthz";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const IS_DEV = process.env.NODE_ENV === "development";
 
 export class ApiError extends Error {
   /** 백엔드 error.code (예: "NOT_FOUND", "PERMISSION_DENIED") */
@@ -26,8 +29,13 @@ async function request<T>(
     ...(options.headers as Record<string, string>),
   };
 
-  // TODO: Phase 2 인증 연동 시 Authorization 헤더 추가
-  // headers["Authorization"] = `Bearer ${token}`;
+  // 개발 환경: 백엔드 debug 모드 개발 헤더로 인증 (settings.debug=True 전용)
+  // 프로덕션 환경: Authorization Bearer 토큰으로 교체 예정 (Phase 인증 연동 시)
+  if (IS_DEV) {
+    const { role, actorId } = useAuthzStore.getState();
+    if (actorId) headers["X-Actor-Id"] = actorId;
+    if (role) headers["X-Actor-Role"] = role;
+  }
 
   const res = await fetch(url, { ...options, headers });
 
