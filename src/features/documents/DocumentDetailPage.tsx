@@ -42,15 +42,15 @@ export function DocumentDetailPage({ documentId }: Props) {
   });
 
   const nodesQuery = useQuery({
-    queryKey: ["nodes", documentId],
-    queryFn: () => nodesApi.list(documentId),
-    enabled: !!versionQuery.data,
+    queryKey: ["nodes", documentId, versionQuery.data?.id],
+    queryFn: () => nodesApi.list(versionQuery.data!.id),
+    enabled: !!versionQuery.data?.id,
   });
 
   const historyQuery = useQuery({
     queryKey: ["workflow-history", documentId, versionQuery.data?.id],
     queryFn: () => workflowApi.getHistory(documentId, versionQuery.data!.id),
-    enabled: !!versionQuery.data && historyExpanded,
+    enabled: !!versionQuery.data?.id && historyExpanded,
   });
 
   const publishMutation = useMutation({
@@ -237,7 +237,7 @@ export function DocumentDetailPage({ documentId }: Props) {
             </button>
             {historyExpanded && (
               <WorkflowHistory
-                items={historyQuery.data ?? []}
+                items={Array.isArray(historyQuery.data) ? historyQuery.data : []}
                 isLoading={historyQuery.isLoading}
               />
             )}

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { adminApi } from "@/lib/api/admin";
 import { StatusBadge, SeverityBadge } from "@/components/admin/StatusBadge";
 import { QueryLoader } from "@/components/feedback/QueryLoader";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Props {
   userId: string;
@@ -196,6 +197,8 @@ function AssignOrgRoleModal({
 export function AdminUserDetailPage({ userId }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { hasRole } = useAuth();
+  const canDelete = hasRole?.("SUPER_ADMIN") ?? false;
   const [showEdit, setShowEdit] = useState(false);
   const [showAssignOrg, setShowAssignOrg] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -255,12 +258,15 @@ export function AdminUserDetailPage({ userId }: Props) {
             >
               수정
             </button>
-            <button
-              onClick={() => setDeleteConfirm(true)}
-              className="px-3 py-1.5 text-sm border border-red-200 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-            >
-              삭제
-            </button>
+            {canDelete && (
+              <button
+                onClick={() => setDeleteConfirm(true)}
+                title="SUPER_ADMIN만 사용 가능"
+                className="px-3 py-1.5 text-sm border border-red-200 rounded-lg text-red-600 hover:bg-red-50 transition-colors min-h-[36px]"
+              >
+                삭제
+              </button>
+            )}
           </div>
         </div>
         <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-4">

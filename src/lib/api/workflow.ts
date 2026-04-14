@@ -26,9 +26,17 @@ export const workflowApi = {
   returnToDraft: (docId: string, verId: string, body?: { comment?: string }) =>
     api.post<void>(`${base(docId, verId)}/return-to-draft`, body),
 
-  getHistory: (docId: string, verId: string) =>
-    api.get<WorkflowHistoryItem[]>(`${base(docId, verId)}/history`),
+  getHistory: async (docId: string, verId: string): Promise<WorkflowHistoryItem[]> => {
+    const raw = await api.get<unknown>(`${base(docId, verId)}/history`);
+    const r = raw as { data?: unknown[] };
+    const items = r.data ?? (raw as unknown[]);
+    return Array.isArray(items) ? (items as WorkflowHistoryItem[]) : [];
+  },
 
-  getReviewActions: (docId: string, verId: string) =>
-    api.get<ReviewActionItem[]>(`${base(docId, verId)}/review-actions`),
+  getReviewActions: async (docId: string, verId: string): Promise<ReviewActionItem[]> => {
+    const raw = await api.get<unknown>(`${base(docId, verId)}/review-actions`);
+    const r = raw as { data?: unknown[] };
+    const items = r.data ?? (raw as unknown[]);
+    return Array.isArray(items) ? (items as ReviewActionItem[]) : [];
+  },
 };

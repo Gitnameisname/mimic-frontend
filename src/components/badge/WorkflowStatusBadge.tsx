@@ -10,8 +10,10 @@ interface Props {
   className?: string;
 }
 
+const FALLBACK_COLORS = { bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-200" };
+
 export function WorkflowStatusBadge({ status, className }: Props) {
-  const colors = WORKFLOW_STATUS_COLORS[status];
+  const colors = WORKFLOW_STATUS_COLORS[status] ?? FALLBACK_COLORS;
   return (
     <span
       className={cn(
@@ -22,7 +24,7 @@ export function WorkflowStatusBadge({ status, className }: Props) {
         className
       )}
     >
-      {WORKFLOW_STATUS_LABELS[status]}
+      {WORKFLOW_STATUS_LABELS[status] ?? status ?? "—"}
     </span>
   );
 }

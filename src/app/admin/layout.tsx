@@ -1,8 +1,12 @@
-import { AdminLayout } from "@/components/admin/layout/AdminLayout";
+"use client";
 
-export const metadata = {
-  title: "Mimir Admin",
-};
+/**
+ * /admin/* 루트 레이아웃 (Phase 14-9).
+ *
+ * AdminLayout에 AuthGuard(ORG_ADMIN) 포함.
+ */
+
+import { AdminLayout } from "@/components/admin/layout/AdminLayout";
 
 export default function AdminRootLayout({
   children,

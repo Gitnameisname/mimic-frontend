@@ -1,4 +1,19 @@
+/**
+ * API 클라이언트 (Phase 14-8 인증 인터셉터 통합).
+ *
+ * 기능:
+ *  - Bearer Token 자동 첨부 (메모리의 AT 사용)
+ *  - 401 응답 시 silent refresh → 원래 요청 재시도
+ *  - 갱신 실패 시 로그인 페이지 리다이렉트
+ *  - 동시 401 발생 시 refresh 1회만 실행 (큐잉)
+ *  - 개발 환경 호환 (debug 헤더 유지)
+ */
+
 import { useAuthzStore } from "@/hooks/useAuthz";
+import {
+  getAccessToken,
+  attemptSilentRefreshForInterceptor,
+} from "@/contexts/AuthContext";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const IS_DEV = process.env.NODE_ENV === "development";
@@ -21,7 +36,8 @@ export class ApiError extends Error {
 
 async function request<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  _retry = false,
 ): Promise<T> {
   const url = `${API_BASE}${path}`;
   const headers: Record<string, string> = {
@@ -29,17 +45,44 @@ async function request<T>(
     ...(options.headers as Record<string, string>),
   };
 
-  // 개발 환경: 백엔드 debug 모드 개발 헤더로 인증 (settings.debug=True 전용)
-  // 프로덕션 환경: Authorization Bearer 토큰으로 교체 예정 (Phase 인증 연동 시)
-  if (IS_DEV) {
+  // Phase 14-8: Bearer Token 자동 첨부
+  const at = getAccessToken();
+  if (at) {
+    headers["Authorization"] = `Bearer ${at}`;
+  }
+
+  // 개발 환경: 백엔드 debug 모드 개발 헤더 (AT가 없을 때만 fallback)
+  if (IS_DEV && !at) {
     const { role, actorId } = useAuthzStore.getState();
     if (actorId) headers["X-Actor-Id"] = actorId;
     if (role) headers["X-Actor-Role"] = role;
   }
 
-  const res = await fetch(url, { ...options, headers });
+  const res = await fetch(url, {
+    ...options,
+    headers,
+    credentials: "include",
+  });
 
   if (!res.ok) {
+    // Phase 14-8: 401 시 자동 갱신 후 재시도 (1회만)
+    if (res.status === 401 && !_retry) {
+      const refreshed = await attemptSilentRefreshForInterceptor();
+      if (refreshed) {
+        return request<T>(path, options, true);
+      }
+      // 갱신 실패 → 로그인 페이지로 리다이렉트
+      if (typeof window !== "undefined") {
+        const currentPath = window.location.pathname;
+        // 로그인/공개 페이지에서는 리다이렉트 안 함
+        const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/auth/callback"];
+        if (!publicPaths.some((p) => currentPath.startsWith(p))) {
+          window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+          return new Promise(() => {}) as T; // 리다이렉트 중 pending
+        }
+      }
+    }
+
     let data: unknown;
     try {
       data = await res.json();
@@ -66,11 +109,6 @@ async function request<T>(
 
 /**
  * ApiError 또는 일반 Error에서 사용자에게 표시할 메시지를 추출한다.
- *
- * - 401: 인증 필요 고정 메시지
- * - 403: 권한 없음 고정 메시지
- * - 4xx: 백엔드 error.message (한국어/영어 혼용) — fallback으로 치환
- * - 5xx / 기타: fallback 메시지
  */
 export function getApiErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof ApiError) {

@@ -8,6 +8,7 @@ import { Modal, ModalActions } from "@/components/feedback/Modal";
 import { FormField } from "@/components/form/FormField";
 import { useMutationWithToast } from "@/hooks/useMutationWithToast";
 import type { AdminRole } from "@/types/admin";
+import { PermissionMatrix } from "./PermissionMatrix";
 
 // ---- 역할 생성 모달 ----
 
@@ -116,10 +117,10 @@ export function AdminRolesPage() {
   const customRoles = (data?.data ?? []).filter((r) => !r.is_system);
 
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 space-y-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">역할 관리</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">역할 관리</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             시스템 역할은 수정·삭제할 수 없습니다. 커스텀 역할은 추가·삭제 가능합니다.
           </p>
@@ -162,6 +163,9 @@ export function AdminRolesPage() {
           emptyMessage="커스텀 역할이 없습니다. '역할 추가'로 새 역할을 생성하세요."
         />
       </div>
+
+      {/* 권한 매트릭스 */}
+      <PermissionMatrix />
 
       {showCreate && <CreateRoleModal onClose={() => setShowCreate(false)} />}
     </div>

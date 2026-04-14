@@ -73,17 +73,19 @@ export function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [role, setRole] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [showCreate, setShowCreate] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin", "users", page, search, status],
+    queryKey: ["admin", "users", page, search, status, role],
     queryFn: () =>
       adminApi.getUsers({
         page,
         page_size: 20,
         search: search || undefined,
         status: status || undefined,
+        role: role || undefined,
       }),
   });
 
@@ -133,12 +135,12 @@ export function AdminUsersPage() {
   }
 
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">사용자 관리</h1>
+    <div className="p-4 sm:p-6 space-y-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">사용자 관리</h1>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-all duration-200 active:scale-95 min-h-[40px] focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -161,14 +163,32 @@ export function AdminUsersPage() {
             />
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">상태</label>
+            <label htmlFor="filter-role" className="text-xs text-gray-500 block mb-1">역할</label>
             <select
+              id="filter-role"
+              value={role}
+              onChange={(e) => {
+                setRole(e.target.value);
+                setPage(1);
+              }}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 min-h-[40px]"
+            >
+              <option value="">전체</option>
+              {ROLES.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="filter-status" className="text-xs text-gray-500 block mb-1">상태</label>
+            <select
+              id="filter-status"
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value);
                 setPage(1);
               }}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 min-h-[40px]"
             >
               <option value="">전체</option>
               <option value="ACTIVE">활성</option>
@@ -182,13 +202,14 @@ export function AdminUsersPage() {
           >
             검색
           </button>
-          {(search || status) && (
+          {(search || status || role) && (
             <button
               type="button"
               onClick={() => {
                 setSearch("");
                 setSearchInput("");
                 setStatus("");
+                setRole("");
                 setPage(1);
               }}
               className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"

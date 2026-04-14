@@ -59,8 +59,8 @@ interface AuthzState {
 export const useAuthzStore = create<AuthzState>()(
   persist(
     (set) => ({
-      role: "VIEWER" as UserRole,
-      actorId: "dev-user",
+      role: "AUTHOR" as UserRole,
+      actorId: "00000000-0000-0000-0000-000000000001",
       setRole: (role) => set({ role }),
       setActorId: (actorId) => set({ actorId }),
     }),

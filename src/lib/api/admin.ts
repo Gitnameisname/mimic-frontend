@@ -11,6 +11,7 @@ import type {
   AdminOrgDetail,
   AdminRole,
   AdminRoleDetail,
+  PermissionMatrix,
   AuditLog,
   AuditLogDetail,
   AdminDocumentType,
@@ -19,8 +20,27 @@ import type {
   BackgroundJob,
   JobSummary,
   ApiKey,
+  ApiKeyWithSecret,
+  AuditEventTypeOption,
   ListResponse,
   SingleResponse,
+  AllSettingsResponse,
+  SettingItem,
+  SettingValue,
+  SettingCategory,
+  ComponentStatusResponse,
+  ResponseTimeTrendResponse,
+  ErrorTrendResponse,
+  AlertRule,
+  AlertHistoryResponse,
+  AlertMetricsResponse,
+  AlertEvaluateStats,
+  AlertCondition,
+  AlertSeverity,
+  AlertChannel,
+  JobSchedule,
+  JobScheduleDetail,
+  CronPreviewResponse,
 } from "@/types/admin";
 
 /**
@@ -78,9 +98,10 @@ export const adminApi = {
     page_size?: number;
     search?: string;
     status?: string;
+    role?: string;
   } = {}) =>
     api.get<ListResponse<AdminUser>>(
-      `/api/v1/admin/users${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 20, search: params.search, status: params.status })}`,
+      `/api/v1/admin/users${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 20, search: params.search, status: params.status, role: params.role })}`,
       adminHeaders()
     ),
   getUser: (userId: string) =>
@@ -141,6 +162,46 @@ export const adminApi = {
   getRoles: () =>
     api.get<ListResponse<AdminRole>>(
       "/api/v1/admin/roles",
+      adminHeaders()
+    ),
+  getPermissionMatrix: () =>
+    api.get<SingleResponse<PermissionMatrix>>(
+      "/api/v1/admin/roles/permissions/matrix",
+      adminHeaders()
+    ),
+
+  // System Settings (Phase 14-11)
+  getAllSettings: () =>
+    api.get<SingleResponse<AllSettingsResponse>>(
+      "/api/v1/admin/settings",
+      adminHeaders()
+    ),
+  getSettingsByCategory: (category: string) =>
+    api.get<SingleResponse<SettingCategory>>(
+      `/api/v1/admin/settings/${encodeURIComponent(category)}`,
+      adminHeaders()
+    ),
+  updateSetting: (category: string, key: string, value: SettingValue) =>
+    api.patch<SingleResponse<SettingItem>>(
+      `/api/v1/admin/settings/${encodeURIComponent(category)}/${encodeURIComponent(key)}`,
+      { value },
+      adminHeaders()
+    ),
+
+  // Monitoring (Phase 14-12)
+  getMonitoringComponents: () =>
+    api.get<SingleResponse<ComponentStatusResponse>>(
+      "/api/v1/admin/monitoring/components",
+      adminHeaders()
+    ),
+  getResponseTimeTrend: (period: string = "24h") =>
+    api.get<SingleResponse<ResponseTimeTrendResponse>>(
+      `/api/v1/admin/monitoring/response-times?period=${encodeURIComponent(period)}`,
+      adminHeaders()
+    ),
+  getErrorTrend: (period: string = "24h") =>
+    api.get<SingleResponse<ErrorTrendResponse>>(
+      `/api/v1/admin/monitoring/error-trends?period=${encodeURIComponent(period)}`,
       adminHeaders()
     ),
   getRole: (roleId: string) =>
@@ -286,9 +347,37 @@ export const adminApi = {
     ),
 
   // API Keys
-  getApiKeys: (params: { page?: number; page_size?: number } = {}) =>
+  getApiKeys: (params: { page?: number; page_size?: number; status?: string; search?: string } = {}) =>
     api.get<ListResponse<ApiKey>>(
-      `/api/v1/admin/api-keys${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 20 })}`,
+      `/api/v1/admin/api-keys${buildQueryString({
+        page: params.page ?? 1,
+        page_size: params.page_size ?? 20,
+        status: params.status,
+        search: params.search,
+      })}`,
+      adminHeaders()
+    ),
+  // Phase 14-15
+  createApiKey: (body: {
+    name: string;
+    description?: string;
+    scope: string;
+    expires_in_days: number;
+  }) =>
+    api.post<SingleResponse<ApiKeyWithSecret>>(
+      "/api/v1/admin/api-keys",
+      body,
+      adminHeaders()
+    ),
+  revokeApiKey: (keyId: string, reason?: string) =>
+    api.post<SingleResponse<{ id: string; name: string; status: string }>>(
+      `/api/v1/admin/api-keys/${encodeURIComponent(keyId)}/revoke`,
+      { reason },
+      adminHeaders()
+    ),
+  getAuditEventTypes: () =>
+    api.get<SingleResponse<{ items: AuditEventTypeOption[] }>>(
+      "/api/v1/admin/audit-logs/event-types",
       adminHeaders()
     ),
 
@@ -338,6 +427,131 @@ export const adminApi = {
   getTokenUsage: (params: { page?: number; limit?: number } = {}) =>
     api.get<SingleResponse<TokenUsageListResponse>>(
       `/api/v1/vectorization/token-usage${buildQueryString({ page: params.page ?? 1, limit: params.limit ?? 20 })}`,
+      adminHeaders()
+    ),
+
+  // Alerts (Phase 14-13)
+  getAlertMetrics: () =>
+    api.get<SingleResponse<AlertMetricsResponse>>(
+      "/api/v1/admin/alerts/metrics",
+      adminHeaders()
+    ),
+  getAlertRules: (enabledOnly = false) =>
+    api.get<SingleResponse<AlertRule[]>>(
+      `/api/v1/admin/alerts/rules${buildQueryString({ enabled_only: enabledOnly })}`,
+      adminHeaders()
+    ),
+  getAlertRule: (ruleId: string) =>
+    api.get<SingleResponse<AlertRule>>(
+      `/api/v1/admin/alerts/rules/${encodeURIComponent(ruleId)}`,
+      adminHeaders()
+    ),
+  createAlertRule: (body: {
+    name: string;
+    description?: string;
+    metric_name: string;
+    condition: AlertCondition;
+    severity: AlertSeverity;
+    channels: AlertChannel[];
+    channel_config?: Record<string, unknown>;
+    enabled?: boolean;
+  }) =>
+    api.post<SingleResponse<AlertRule>>(
+      "/api/v1/admin/alerts/rules",
+      body,
+      adminHeaders()
+    ),
+  updateAlertRule: (
+    ruleId: string,
+    body: Partial<{
+      name: string;
+      description: string;
+      metric_name: string;
+      condition: AlertCondition;
+      severity: AlertSeverity;
+      channels: AlertChannel[];
+      channel_config: Record<string, unknown>;
+      enabled: boolean;
+    }>
+  ) =>
+    api.patch<SingleResponse<AlertRule>>(
+      `/api/v1/admin/alerts/rules/${encodeURIComponent(ruleId)}`,
+      body,
+      adminHeaders()
+    ),
+  deleteAlertRule: (ruleId: string) =>
+    api.delete<SingleResponse<{ deleted: boolean }>>(
+      `/api/v1/admin/alerts/rules/${encodeURIComponent(ruleId)}`,
+      adminHeaders()
+    ),
+  getAlertHistory: (params: {
+    status?: string;
+    severity?: string;
+    from?: string;
+    to?: string;
+    page?: number;
+    page_size?: number;
+  } = {}) =>
+    api.get<SingleResponse<AlertHistoryResponse>>(
+      `/api/v1/admin/alerts/history${buildQueryString({
+        status: params.status,
+        severity: params.severity,
+        from: params.from,
+        to: params.to,
+        page: params.page ?? 1,
+        page_size: params.page_size ?? 50,
+      })}`,
+      adminHeaders()
+    ),
+  acknowledgeAlert: (historyId: string) =>
+    api.post<SingleResponse<unknown>>(
+      `/api/v1/admin/alerts/history/${encodeURIComponent(historyId)}/acknowledge`,
+      {},
+      adminHeaders()
+    ),
+  evaluateAlertsNow: () =>
+    api.post<SingleResponse<AlertEvaluateStats>>(
+      "/api/v1/admin/alerts/evaluate",
+      {},
+      adminHeaders()
+    ),
+
+  // Job Schedules (Phase 14-14)
+  getJobSchedules: () =>
+    api.get<SingleResponse<JobSchedule[]>>(
+      "/api/v1/admin/jobs/schedules",
+      adminHeaders()
+    ),
+  getJobSchedule: (jobId: string) =>
+    api.get<SingleResponse<JobScheduleDetail>>(
+      `/api/v1/admin/jobs/schedules/${encodeURIComponent(jobId)}`,
+      adminHeaders()
+    ),
+  runJobSchedule: (jobId: string) =>
+    api.post<SingleResponse<{ message: string; run_id: string }>>(
+      `/api/v1/admin/jobs/schedules/${encodeURIComponent(jobId)}/run`,
+      {},
+      adminHeaders()
+    ),
+  updateJobSchedule: (
+    jobId: string,
+    body: { schedule?: string; enabled?: boolean }
+  ) =>
+    api.patch<SingleResponse<JobSchedule>>(
+      `/api/v1/admin/jobs/schedules/${encodeURIComponent(jobId)}`,
+      body,
+      adminHeaders()
+    ),
+  cancelJobSchedule: (jobId: string) =>
+    api.post<SingleResponse<{ message: string; run_id: string }>>(
+      `/api/v1/admin/jobs/schedules/${encodeURIComponent(jobId)}/cancel`,
+      {},
+      adminHeaders()
+    ),
+  previewCron: (schedule: string) =>
+    api.post<SingleResponse<CronPreviewResponse>>(
+      "/api/v1/admin/jobs/schedules/cron/preview",
+      { schedule },
       adminHeaders()
     ),
 };

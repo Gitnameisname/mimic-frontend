@@ -14,19 +14,19 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300",
+    "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-300 transition-colors duration-150",
   secondary:
-    "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400",
+    "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 active:bg-gray-100 disabled:bg-gray-100 disabled:text-gray-400 transition-colors duration-150",
   ghost:
-    "bg-transparent text-gray-600 hover:bg-gray-100 disabled:text-gray-300",
+    "bg-transparent text-gray-600 hover:bg-gray-100 active:bg-gray-200 disabled:text-gray-300 transition-colors duration-150",
   danger:
-    "bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300",
+    "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 disabled:bg-red-300 transition-colors duration-150",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: "px-3 py-1.5 text-sm",
-  md: "px-4 py-2 text-sm",
-  lg: "px-5 py-2.5 text-base",
+  sm: "px-3 py-1.5 text-sm rounded-md",
+  md: "px-4 py-2 text-sm rounded-lg",
+  lg: "px-5 py-2.5 text-base rounded-lg",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -39,8 +39,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || loading}
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors cursor-pointer",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+          "inline-flex items-center justify-center gap-2 font-medium cursor-pointer",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-blue-500",
           "disabled:cursor-not-allowed",
           variantStyles[variant],
           sizeStyles[size],
