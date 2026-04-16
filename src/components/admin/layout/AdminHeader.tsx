@@ -73,6 +73,18 @@ export function AdminHeader({
 
       <div className="flex-1" />
 
+      {/* User UI로 돌아가기 */}
+      <Link
+        href="/documents"
+        className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+        aria-label="User UI로 돌아가기"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        <span>User UI</span>
+      </Link>
+
       {/* 사용자 정보 + 로그아웃 */}
       {isAuthenticated && user && (
         <div className="flex items-center gap-2 sm:gap-3">
