@@ -87,24 +87,33 @@ export const documentsApi = {
 
   get: async (id: string): Promise<Document> => {
     const raw = await api.get<unknown>(`/api/v1/documents/${id}`);
-    const r = raw as { data?: Record<string, unknown> };
-    const d: Record<string, unknown> = r.data ?? (raw as Record<string, unknown>);
-    return {
-      id: d.id as string,
-      title: (d.title as string) ?? "",
-      document_type: (d.document_type as string) ?? "",
-      created_by: (d.created_by as string) ?? "",
-      created_by_name: (d.created_by as string) ?? "",
-      created_at: d.created_at as string,
-      updated_at: d.updated_at as string,
-      current_version_id: (d.current_draft_version_id ?? d.current_published_version_id) as string | undefined,
-      metadata: (d.metadata as Record<string, unknown> | undefined),
-    };
+    return adaptDocument(raw);
   },
 
-  create: (body: { title: string; document_type: string; metadata?: Record<string, unknown> }) =>
-    api.post<Document>("/api/v1/documents", body),
+  create: async (body: { title: string; document_type: string; metadata?: Record<string, unknown> }): Promise<Document> => {
+    const raw = await api.post<unknown>("/api/v1/documents", body);
+    return adaptDocument(raw);
+  },
 
-  update: (id: string, body: { title?: string; metadata?: Record<string, unknown> }) =>
-    api.patch<Document>(`/api/v1/documents/${id}`, body),
+  update: async (id: string, body: { title?: string; metadata?: Record<string, unknown> }): Promise<Document> => {
+    const raw = await api.patch<unknown>(`/api/v1/documents/${id}`, body);
+    return adaptDocument(raw);
+  },
 };
+
+// 백엔드 응답 { data: {...}, meta: {...} } → Document 변환
+function adaptDocument(raw: unknown): Document {
+  const r = raw as { data?: Record<string, unknown> };
+  const d: Record<string, unknown> = r.data ?? (raw as Record<string, unknown>);
+  return {
+    id: d.id as string,
+    title: (d.title as string) ?? "",
+    document_type: (d.document_type as string) ?? "",
+    created_by: (d.created_by as string) ?? "",
+    created_by_name: (d.created_by as string) ?? "",
+    created_at: d.created_at as string,
+    updated_at: d.updated_at as string,
+    current_version_id: (d.current_draft_version_id ?? d.current_published_version_id) as string | undefined,
+    metadata: (d.metadata as Record<string, unknown> | undefined),
+  };
+}
