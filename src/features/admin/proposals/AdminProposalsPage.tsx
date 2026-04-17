@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { proposalsApi } from "@/lib/api/s2admin";
 import type { Proposal, ProposalDetail, ProposalStatus } from "@/types/s2admin";
@@ -261,12 +261,40 @@ function BatchToolbar({
 // AdminProposalsPage
 // ═══════════════════════════════════════
 
+type LastBatchOp = {
+  ids: string[];
+  action: "approve" | "reject";
+};
+
+const UNDO_SECONDS = 30;
+
 export function AdminProposalsPage() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("pending");
   const [selected, setSelected] = useState<Proposal | null>(null);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [lastBatchOp, setLastBatchOp] = useState<LastBatchOp | null>(null);
+  const [undoCountdown, setUndoCountdown] = useState(0);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!lastBatchOp) return;
+    setUndoCountdown(UNDO_SECONDS);
+    countdownRef.current = setInterval(() => {
+      setUndoCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current!);
+          setLastBatchOp(null);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, [lastBatchOp]);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin", "proposals", page, statusFilter],
@@ -274,19 +302,33 @@ export function AdminProposalsPage() {
     refetchInterval: 15_000,
   });
 
+  const batchRollbackMut = useMutation({
+    mutationFn: (op: LastBatchOp) => proposalsApi.batchRollback(op.ids, op.action),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "proposals"] });
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      setLastBatchOp(null);
+      setUndoCountdown(0);
+    },
+  });
+
   const batchApproveMut = useMutation({
     mutationFn: () => proposalsApi.batchApprove([...checkedIds]),
     onSuccess: () => {
+      const ids = [...checkedIds];
       qc.invalidateQueries({ queryKey: ["admin", "proposals"] });
       setCheckedIds(new Set());
+      setLastBatchOp({ ids, action: "approve" });
     },
   });
 
   const batchRejectMut = useMutation({
     mutationFn: () => proposalsApi.batchReject([...checkedIds]),
     onSuccess: () => {
+      const ids = [...checkedIds];
       qc.invalidateQueries({ queryKey: ["admin", "proposals"] });
       setCheckedIds(new Set());
+      setLastBatchOp({ ids, action: "reject" });
     },
   });
 
@@ -314,6 +356,27 @@ export function AdminProposalsPage() {
 
   return (
     <div className="p-3 sm:p-6 space-y-6 max-w-7xl pb-24">
+      {lastBatchOp && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-2xl text-sm font-medium"
+        >
+          <span>
+            {lastBatchOp.action === "approve" ? "승인" : "거절"} 완료 — {lastBatchOp.ids.length}건
+          </span>
+          <span className="text-gray-400 tabular-nums">{undoCountdown}초</span>
+          <button
+            type="button"
+            onClick={() => batchRollbackMut.mutate(lastBatchOp)}
+            disabled={batchRollbackMut.isPending}
+            className="ml-1 px-3 py-1 rounded-lg bg-white text-gray-900 font-semibold text-xs hover:bg-gray-100 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-white min-h-[32px]"
+          >
+            {batchRollbackMut.isPending ? "처리 중…" : "되돌리기"}
+          </button>
+        </div>
+      )}
+
       {selected && (
         <ProposalDetailPanel
           proposal={selected}

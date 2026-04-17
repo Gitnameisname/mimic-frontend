@@ -307,6 +307,13 @@ export const proposalsApi = {
       { ids, feedback },
       adminHeaders()
     ),
+
+  batchRollback: (ids: string[], original_action: "approve" | "reject") =>
+    api.post<SingleResponse<{ rolled_back: number; skipped: number; skipped_ids: string[] }>>(
+      "/api/v1/admin/proposals/batch-rollback",
+      { ids, original_action },
+      adminHeaders()
+    ),
 };
 
 export const agentActivityApi = {
