@@ -6,3 +6,5 @@ export { workflowApi } from "./workflow";
 export { searchApi } from "./search";
 export { diffApi } from "./diff";
 export { ragApi, queryStream } from "./rag";
+export { proposalsApi } from "./proposals";
+export type { AgentProposal, ProposalListResponse, ProposalStats } from "./proposals";

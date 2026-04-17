@@ -15,6 +15,7 @@ import { DocumentTree } from "./DocumentTree";
 import { NodeRenderer } from "./NodeRenderer";
 import { WorkflowActionModal } from "../workflow/WorkflowActionModal";
 import { RagPanel } from "../rag/RagPanel";
+import { AgentProposalsTab } from "./AgentProposalsTab";
 import { formatDate, relativeTime } from "@/lib/utils";
 import { useAuthz } from "@/hooks/useAuthz";
 import type { WorkflowStatus, WorkflowAction } from "@/types";
@@ -242,6 +243,9 @@ export function DocumentDetailPage({ documentId }: Props) {
               />
             )}
           </div>
+
+          {/* AI 에이전트 제안 */}
+          <AgentProposalsTab documentId={documentId} />
         </div>
       </div>
 
