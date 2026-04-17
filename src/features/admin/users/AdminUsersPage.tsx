@@ -89,6 +89,13 @@ export function AdminUsersPage() {
       }),
   });
 
+  const activateMutation = useMutationWithToast({
+    mutationFn: (userId: string) => adminApi.activateUser(userId),
+    successMessage: "사용자를 활성화했습니다.",
+    errorMessage: "활성화에 실패했습니다.",
+    invalidateKeys: [["admin", "users"]],
+  });
+
   const columns: Column<AdminUser>[] = [
     {
       key: "email",
@@ -112,8 +119,30 @@ export function AdminUsersPage() {
     {
       key: "status",
       header: "상태",
-      width: "100px",
-      render: (row) => <StatusBadge value={row.status} />,
+      width: "120px",
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <StatusBadge
+            value={row.status}
+            label={row.status === "PENDING" ? "승인 대기" : row.status === "ACTIVE" ? "활성" : row.status === "INACTIVE" ? "비활성" : "정지"}
+            variant={row.status === "PENDING" ? "warning" : undefined}
+          />
+          {row.status === "PENDING" && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                activateMutation.mutate(row.id);
+              }}
+              disabled={activateMutation.isPending}
+              className="text-xs px-2 py-0.5 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[24px]"
+              aria-label={`${row.display_name} 승인`}
+            >
+              승인
+            </button>
+          )}
+        </div>
+      ),
     },
     {
       key: "last_login_at",
@@ -192,6 +221,7 @@ export function AdminUsersPage() {
             >
               <option value="">전체</option>
               <option value="ACTIVE">활성</option>
+              <option value="PENDING">승인 대기</option>
               <option value="INACTIVE">비활성</option>
               <option value="SUSPENDED">정지</option>
             </select>

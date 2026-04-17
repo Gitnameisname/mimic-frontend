@@ -9,7 +9,7 @@
  * - 읽기 전용 (편집 불가 — RBAC는 코드 레벨 관리)
  */
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { adminApi } from "@/lib/api/admin";
 import { cn } from "@/lib/utils";
@@ -117,9 +117,8 @@ export function PermissionMatrix() {
               const isCollapsed = collapsed.has(group.name);
               const groupLabel = GROUP_LABELS[group.name] ?? group.name;
               return (
-                <>
+                <Fragment key={group.name}>
                   <tr
-                    key={`header-${group.name}`}
                     className="bg-gray-50 border-t border-gray-200"
                   >
                     <td
@@ -210,7 +209,7 @@ export function PermissionMatrix() {
                         })}
                       </tr>
                     ))}
-                </>
+                </Fragment>
               );
             })}
           </tbody>

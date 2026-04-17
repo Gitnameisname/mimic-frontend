@@ -121,6 +121,12 @@ export const adminApi = {
       body,
       adminHeaders()
     ),
+  activateUser: (userId: string) =>
+    api.post<SingleResponse<AdminUser>>(
+      `/api/v1/admin/users/${userId}/activate`,
+      {},
+      adminHeaders()
+    ),
   deleteUser: (userId: string) =>
     api.delete<void>(`/api/v1/admin/users/${userId}`, adminHeaders()),
   assignOrgRole: (userId: string, body: { org_id: string; role_name: string }) =>
