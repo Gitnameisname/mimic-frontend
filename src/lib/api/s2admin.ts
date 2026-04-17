@@ -31,6 +31,8 @@ import type {
   SingleResponse,
 } from "@/types/s2admin";
 
+// [보안 임시 구현] localStorage 기반 dev 헤더 — S3 Phase 1에서 JWT Bearer로 전환 예정
+// TODO(S3-Phase1): Authorization: Bearer <JWT> 헤더로 교체, localStorage 의존성 제거
 function adminHeaders(): RequestInit {
   const headers: Record<string, string> = {};
   try {

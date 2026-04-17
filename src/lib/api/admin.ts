@@ -46,9 +46,11 @@ import type {
 /**
  * Zustand persist store(mimir-authz)에서 actor 정보를 읽어 dev 인증 헤더로 반환한다.
  *
- * Phase 8 JWT 연동 전까지 백엔드의 X-Actor-Id / X-Actor-Role dev 헤더를 사용.
- * production 환경에서는 백엔드가 해당 헤더를 무시하므로, JWT Bearer 토큰 연동 후
- * Authorization 헤더로 교체해야 한다.
+ * [보안 임시 구현] Phase 8 JWT 연동 전까지 백엔드의 X-Actor-Id / X-Actor-Role dev 헤더를 사용.
+ * - localStorage 저장으로 XSS 취약점 존재 (HttpOnly Cookie 대비 취약)
+ * - production 환경에서는 백엔드가 debug=False 시 해당 헤더를 완전히 무시함
+ * - S3 Phase 1에서 JWT Bearer + HttpOnly Cookie 방식으로 전환 예정
+ * TODO(S3-Phase1): localStorage 의존성 제거, Authorization: Bearer <JWT> 헤더로 교체
  */
 function adminHeaders(): RequestInit {
   const headers: Record<string, string> = {};

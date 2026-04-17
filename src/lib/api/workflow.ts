@@ -1,6 +1,14 @@
 import { api } from "./client";
 import type { WorkflowHistoryItem, ReviewActionItem } from "@/types";
 
+function isWorkflowHistoryItem(v: unknown): v is WorkflowHistoryItem {
+  return typeof v === "object" && v !== null && "action" in v && "actor_id" in v;
+}
+
+function isReviewActionItem(v: unknown): v is ReviewActionItem {
+  return typeof v === "object" && v !== null && "id" in v;
+}
+
 const base = (docId: string, verId: string) =>
   `/api/v1/documents/${docId}/versions/${verId}/workflow`;
 
@@ -30,13 +38,15 @@ export const workflowApi = {
     const raw = await api.get<unknown>(`${base(docId, verId)}/history`);
     const r = raw as { data?: unknown[] };
     const items = r.data ?? (raw as unknown[]);
-    return Array.isArray(items) ? (items as WorkflowHistoryItem[]) : [];
+    if (!Array.isArray(items)) return [];
+    return items.filter(isWorkflowHistoryItem);
   },
 
   getReviewActions: async (docId: string, verId: string): Promise<ReviewActionItem[]> => {
     const raw = await api.get<unknown>(`${base(docId, verId)}/review-actions`);
     const r = raw as { data?: unknown[] };
     const items = r.data ?? (raw as unknown[]);
-    return Array.isArray(items) ? (items as ReviewActionItem[]) : [];
+    if (!Array.isArray(items)) return [];
+    return items.filter(isReviewActionItem);
   },
 };

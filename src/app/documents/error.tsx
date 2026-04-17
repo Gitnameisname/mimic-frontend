@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { Button } from "@/components/button/Button";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { logError } from "@/lib/logger";
 
 export default function DocumentsError({
   error,
@@ -12,7 +13,7 @@ export default function DocumentsError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    logError(error, "DocumentsError");
   }, [error]);
 
   return (

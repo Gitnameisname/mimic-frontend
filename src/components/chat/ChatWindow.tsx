@@ -25,6 +25,7 @@ import ConfirmDialog from "@/components/common/ConfirmDialog";
 import ChatHeader from "./ChatHeader";
 import MessageHistory from "./MessageHistory";
 import InputArea from "./InputArea";
+import { ErrorBoundary } from "@/components/feedback/ErrorBoundary";
 import type { RAGCitationInfo } from "@/types/conversation";
 
 interface ChatWindowProps {
@@ -228,13 +229,15 @@ export default function ChatWindow({
       )}
 
       {/* 메시지 히스토리 */}
-      <MessageHistory
-        ref={historyRef}
-        messages={messages}
-        streamingContent={streamingContent}
-        streamingMsgId={streamingMsgIdRef.current ?? undefined}
-        onCitationClick={setActiveCitation}
-      />
+      <ErrorBoundary>
+        <MessageHistory
+          ref={historyRef}
+          messages={messages}
+          streamingContent={streamingContent}
+          streamingMsgId={streamingMsgIdRef.current ?? undefined}
+          onCitationClick={setActiveCitation}
+        />
+      </ErrorBoundary>
 
       {/* Citation 팝업 (role=dialog, focus trap) */}
       {activeCitation && (

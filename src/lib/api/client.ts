@@ -51,7 +51,9 @@ async function request<T>(
     headers["Authorization"] = `Bearer ${at}`;
   }
 
-  // 개발 환경: 백엔드 debug 모드 개발 헤더 (AT가 없을 때만 fallback)
+  // [개발 전용] AT 없을 때 X-Actor-Id/Role dev 헤더 fallback
+  // 백엔드 debug=True + environment=development 환경에서만 수락됨 (production 무시)
+  // TODO(S3-Phase1): JWT 전환 완료 시 이 블록 제거
   if (IS_DEV && !at) {
     const { role, actorId } = useAuthzStore.getState();
     if (actorId) headers["X-Actor-Id"] = actorId;

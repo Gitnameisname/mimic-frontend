@@ -41,9 +41,13 @@ function escapeHtmlExceptHighlight(raw: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
   // Step 2: ts_headline이 생성하는 &lt;b&gt; / &lt;/b&gt; 패턴만 <mark>으로 복원
-  return escaped
+  const restored = escaped
     .replace(/&lt;b&gt;/g, '<mark class="bg-yellow-100 text-yellow-900 rounded px-0.5">')
     .replace(/&lt;\/b&gt;/g, "</mark>");
+  // Step 3: 복원 후 <mark> 이외의 HTML 태그가 남아있으면 안전을 위해 전부 제거
+  // (ts_headline이 예상치 않은 태그를 생성했을 때의 방어선)
+  const ALLOWED_TAG_RE = /<(?!\/?(mark)[\s>])[^>]+>/gi;
+  return restored.replace(ALLOWED_TAG_RE, "");
 }
 
 function HighlightedSnippet({ html }: { html: string }) {

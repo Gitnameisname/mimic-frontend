@@ -1,11 +1,16 @@
 import { api } from "./client";
 import type { DocumentNode } from "@/types";
 
+function isDocumentNode(v: unknown): v is DocumentNode {
+  return typeof v === "object" && v !== null && "id" in v && "node_type" in v;
+}
+
 // 백엔드 경로: GET /api/v1/versions/{version_id}/nodes
 function adaptNodes(raw: unknown): DocumentNode[] {
   const r = raw as { data?: unknown[] };
   const items = r.data ?? (raw as unknown[]);
-  return Array.isArray(items) ? (items as DocumentNode[]) : [];
+  if (!Array.isArray(items)) return [];
+  return items.filter(isDocumentNode);
 }
 
 export const nodesApi = {
