@@ -10,7 +10,7 @@
  * - 에러: 에러 메시지 표시 + 로그인 링크
  */
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthLayout } from "@/components/auth/AuthLayout";
@@ -20,41 +20,48 @@ function OAuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { handleOAuthCallback } = useAuth();
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    // 1. 에러 파라미터 확인 (query string)
+  // F-05 시정(2026-04-18): URL 파라미터 기반 에러는 렌더 단계에서 파생(useMemo)하여
+  //   useEffect 내부 setState 를 제거. 비동기 callback 실패만 상태로 유지.
+  const urlError = useMemo<string | null>(() => {
     const errorParam = searchParams.get("error");
     const errorDesc = searchParams.get("error_description");
     if (errorParam) {
-      setError(
-        errorDesc || "GitLab 로그인에 실패했습니다. 다시 시도해 주세요.",
-      );
-      return;
+      return errorDesc || "GitLab 로그인에 실패했습니다. 다시 시도해 주세요.";
     }
+    return null;
+  }, [searchParams]);
 
-    // 2. URL fragment에서 AT 추출
+  const [asyncError, setAsyncError] = useState("");
+  const error = asyncError || urlError || "";
+
+  useEffect(() => {
+    // URL 파라미터 에러가 있으면 비동기 처리 스킵 — 이미 렌더 단계에서 파생됨
+    if (urlError) return;
+
+    // URL fragment 에서 AT 추출
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
     const accessToken = params.get("access_token");
 
-    if (!accessToken) {
-      setError("인증 정보를 받지 못했습니다. 다시 시도해 주세요.");
-      return;
-    }
-
-    // 3. AuthContext를 통해 AT 저장 + 프로필 로드
+    // AuthContext 를 통해 AT 저장 + 프로필 로드
+    // F-05 시정(2026-04-18): async IIFE 내부의 setState 는 효과 본문의 "동기적" setState 가
+    //   아니므로 react-hooks/set-state-in-effect 규칙 위반이 아님. accessToken 없음 케이스도
+    //   async 내부로 이동시켜 동기 setState 경로를 제거함.
     (async () => {
+      if (!accessToken) {
+        setAsyncError("인증 정보를 받지 못했습니다. 다시 시도해 주세요.");
+        return;
+      }
       try {
         await handleOAuthCallback(accessToken);
         // URL fragment 제거 후 메인 페이지로 이동
         window.history.replaceState(null, "", "/auth/callback");
         router.push("/");
       } catch {
-        setError("로그인 처리 중 오류가 발생했습니다. 다시 시도해 주세요.");
+        setAsyncError("로그인 처리 중 오류가 발생했습니다. 다시 시도해 주세요.");
       }
     })();
-  }, [router, searchParams, handleOAuthCallback]);
+  }, [router, urlError, handleOAuthCallback]);
 
   if (error) {
     return (

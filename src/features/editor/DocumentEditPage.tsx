@@ -47,12 +47,24 @@ export function DocumentEditPage({ documentId }: Props) {
   });
 
   // 초기 데이터 로드
-  // 제목 우선순위: version.title_snapshot(최신 저장본) → doc.title(생성 시 제목)
+  // 제목 우선순위: version.title_snapshot(최신 저장본) → doc.title(생성 시 제목).
+  // F-05 시정(2026-04-18): "서버에서 fetch → 로컬 편집 state 로 복사" 는 전형적인
+  //   synchronizing-to-external-system 효과로 set-state-in-effect 규칙의 의도된
+  //   예외 영역임(React 문서의 "You Might Not Need an Effect" 중 "Resetting all state
+  //   when a prop changes" 패턴 참고). 다만 sync 조건에 "초기 1회" 가드를 두어
+  //   refetch 시 사용자의 미저장 편집을 덮어쓰지 않도록 보강.
+  const initializedRef = useRef(false);
   useEffect(() => {
-    if (versionQuery.data?.title_snapshot ?? docQuery.data) {
-      setTitle(versionQuery.data?.title_snapshot ?? docQuery.data?.title ?? "");
-    }
-    if (nodesQuery.data) setNodes(nodesQuery.data);
+    if (initializedRef.current) return;
+    const hasSeed = (versionQuery.data?.title_snapshot ?? docQuery.data) != null;
+    const hasNodes = nodesQuery.data != null;
+    if (!hasSeed || !hasNodes) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- 서버에서 로드된 버전 스냅샷을
+       로컬 편집 state 로 1회 복사하는 동기화 효과. initializedRef 가드로 refetch 덮어쓰기 방지. */
+    setTitle(versionQuery.data?.title_snapshot ?? docQuery.data?.title ?? "");
+    setNodes(nodesQuery.data ?? []);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    initializedRef.current = true;
   }, [docQuery.data, versionQuery.data, nodesQuery.data]);
 
   const saveMutation = useMutation({

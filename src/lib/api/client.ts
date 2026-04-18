@@ -148,6 +148,15 @@ export const api = {
       method: "PATCH",
       body: body != null ? JSON.stringify(body) : undefined,
     }),
+  // F-04 시정(2026-04-18): admin.ts 의 `api.put(...)` 호출부가 type error 를 일으켜
+  //   put 메서드를 API 클라이언트에 공식 추가. PUT 은 멱등 업데이트(document-type plugin 등)에
+  //   사용되며 기존 post/patch 와 동일한 인터셉터(401 재시도, Bearer 자동 첨부)를 공유한다.
+  put: <T>(path: string, body?: unknown, init?: RequestInit) =>
+    request<T>(path, {
+      ...init,
+      method: "PUT",
+      body: body != null ? JSON.stringify(body) : undefined,
+    }),
   delete: <T>(path: string, init?: RequestInit) =>
     request<T>(path, { ...init, method: "DELETE" }),
 };

@@ -10,7 +10,7 @@
  * - SUPER_ADMIN 외에는 모든 입력이 disabled (백엔드도 admin.write로 차단)
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "@/lib/api/admin";
 import { useAuth } from "@/contexts/AuthContext";
@@ -294,12 +294,14 @@ export function AdminSettingsPage() {
   const [drafts, setDrafts] = useState<Record<string, SettingValue>>({}); // "category.key" → value
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // 첫 로드 시 첫 카테고리를 활성 탭으로
-  useEffect(() => {
-    if (!activeTab && categories.length > 0) {
-      setActiveTab(categories[0].name);
-    }
-  }, [categories, activeTab]);
+  // F-05 시정(2026-04-18): 첫 로드 시 activeTab 기본값을 useEffect 동기 setState 로
+  //   할당하면 set-state-in-effect 위반. 선택된 탭이 유효하지 않거나 비어 있으면
+  //   렌더 단계에서 "첫 카테고리" 로 fallback 하여 표시. 사용자가 탭을 클릭하면
+  //   setActiveTab 으로 상태가 실제 채워진다.
+  const effectiveTab =
+    activeTab && categories.some((c) => c.name === activeTab)
+      ? activeTab
+      : categories[0]?.name ?? "";
 
   // 변경 항목 산출
   const dirtyChanges = useMemo(() => {
@@ -380,7 +382,7 @@ export function AdminSettingsPage() {
     );
   }
 
-  const activeCategory = categories.find((c) => c.name === activeTab);
+  const activeCategory = categories.find((c) => c.name === effectiveTab);
 
   return (
     <div className="p-4 sm:p-6 space-y-5">
@@ -454,7 +456,7 @@ export function AdminSettingsPage() {
                 const item = cat.items.find((i) => i.key === k.slice(cat.name.length + 1));
                 return item && !valuesEqual(drafts[k], item.value);
               }).length;
-              const active = cat.name === activeTab;
+              const active = cat.name === effectiveTab;
               return (
                 <button
                   key={cat.name}

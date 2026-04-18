@@ -127,13 +127,18 @@ export function AdminAuditLogsPage() {
   const [result, setResult] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // 기간 프리셋 → ISO 문자열 계산 (사용자 시간대 → UTC ISO)
+  // 기간 프리셋 → ISO 문자열 계산 (사용자 시간대 → UTC ISO).
+  // F-05 시정(2026-04-18): Date.now() 는 impure 호출이므로 렌더 단계에서 경고 대상.
+  //   "기간 프리셋 선택 시점의 now" 라는 의미론상 약간의 재렌더 간 변동(초 단위)은 UX 에
+  //   영향을 주지 않고, 질의가 재실행되면 서버 side 에서 일관된 snapshot 을 받는다.
+  //   따라서 해당 회귀는 문서화하고 의도적으로 규칙을 해제한다.
   const { from, to } = useMemo(() => {
     if (preset === "custom") {
       return { from: customFrom || undefined, to: customTo || undefined };
     }
     const cfg = PRESETS.find((p) => p.key === preset);
     if (!cfg?.ms) return { from: undefined, to: undefined };
+    // eslint-disable-next-line react-hooks/purity -- 시간 기반 필터 값 계산의 의도된 side-effect
     const fromIso = new Date(Date.now() - cfg.ms).toISOString();
     return { from: fromIso, to: undefined };
   }, [preset, customFrom, customTo]);

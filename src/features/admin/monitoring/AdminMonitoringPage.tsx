@@ -143,15 +143,21 @@ export function AdminMonitoringPage() {
     placeholderData: (prev) => prev,
   });
 
-  // 갱신 카운트다운 (UX)
+  // 갱신 카운트다운 (UX).
+  // F-05 시정(2026-04-18): 효과 본문 동기 setState (set-state-in-effect) 제거를 위해
+  //   초기 리셋을 setInterval 콜백 안의 첫 tick 으로 위임. dataUpdatedAt / refreshInterval
+  //   변경 시 effect 가 재실행되어 새 interval 이 즉시 시작되므로 UX 차이는 1초 미만.
   const [secondsToNext, setSecondsToNext] = useState<number>(
     Math.floor(refreshInterval / 1000),
   );
   useEffect(() => {
     if (refreshInterval === 0) return;
-    setSecondsToNext(Math.floor(refreshInterval / 1000));
+    const total = Math.floor(refreshInterval / 1000);
+    const startedAt = Date.now();
     const handle = window.setInterval(() => {
-      setSecondsToNext((s) => (s <= 1 ? Math.floor(refreshInterval / 1000) : s - 1));
+      const elapsedSec = Math.floor((Date.now() - startedAt) / 1000);
+      const remaining = total - (elapsedSec % total);
+      setSecondsToNext(remaining === 0 ? total : remaining);
     }, 1000);
     return () => window.clearInterval(handle);
   }, [refreshInterval, componentsQuery.dataUpdatedAt]);

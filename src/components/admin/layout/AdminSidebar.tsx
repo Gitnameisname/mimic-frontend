@@ -224,7 +224,16 @@ interface AdminSidebarProps {
 export function AdminSidebar({ collapsed = false, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
 
-  let lastGroup = "";
+  // F-05 시정(2026-04-18): 렌더 중 let 변수 변형(reassign after render) 금지 규칙
+  //   (react-hooks/immutability) 을 준수하기 위해, 그룹 구분선을 map 상태가 아닌
+  //   "이 항목이 해당 그룹의 첫 등장인가?" 로 선계산. ADMIN_NAV_ITEMS 는 모듈 상수이므로
+  //   결과는 매 렌더에서 동일하여 useMemo 없이도 안전함.
+  const firstIndexByGroup = new Map<string, number>();
+  ADMIN_NAV_ITEMS.forEach((item, idx) => {
+    if (item.group && !firstIndexByGroup.has(item.group)) {
+      firstIndexByGroup.set(item.group, idx);
+    }
+  });
 
   return (
     <aside
@@ -236,7 +245,7 @@ export function AdminSidebar({ collapsed = false, onClose }: AdminSidebarProps) 
     >
       {/* 그룹 헤더 + 메뉴 목록 */}
       <nav className="flex-1 py-3 px-2 space-y-0" aria-label="관리자 네비게이션">
-        {ADMIN_NAV_ITEMS.map((item) => {
+        {ADMIN_NAV_ITEMS.map((item, idx) => {
           const isActive =
             pathname === item.href ||
             (item.href !== "/admin/dashboard" && pathname.startsWith(item.href + "/"));
@@ -247,9 +256,8 @@ export function AdminSidebar({ collapsed = false, onClose }: AdminSidebarProps) 
 
           const active = item.href === "/admin/dashboard" ? exactDashboard : isActive;
 
-          // 그룹 구분선
-          const showGroup = item.group && item.group !== lastGroup;
-          if (item.group) lastGroup = item.group;
+          // 그룹 구분선 — 사전 계산된 "그룹별 첫 인덱스" 와 비교 (let reassign 제거)
+          const showGroup = !!item.group && firstIndexByGroup.get(item.group) === idx;
 
           return (
             <div key={item.href}>

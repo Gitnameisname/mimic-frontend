@@ -1,8 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminApi, type ChunkItem, type VectorizationStats, type TokenUsageItem } from "@/lib/api/admin";
+import { useQuery, useMutation, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
+import {
+  adminApi,
+  type ChunkListResponse,
+  type VectorizationStats,
+  type TokenUsageListResponse,
+} from "@/lib/api/admin";
+import type { SingleResponse } from "@/types/admin";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -351,7 +357,9 @@ function ChunksTab({
   filterHasEmbedding,
   setFilterHasEmbedding,
 }: {
-  chunksQ: ReturnType<typeof useQuery>;
+  // F-04 시정(2026-04-18): ReturnType<typeof useQuery> 는 generic 을 잃어버려
+  //   data 가 `{}` 로 추론됨. UseQueryResult 를 명시적으로 지정.
+  chunksQ: UseQueryResult<SingleResponse<ChunkListResponse>>;
   page: number;
   setPage: (p: number) => void;
   filterDocType: string;
@@ -359,7 +367,7 @@ function ChunksTab({
   filterHasEmbedding: boolean | undefined;
   setFilterHasEmbedding: (v: boolean | undefined) => void;
 }) {
-  const data = chunksQ.data?.data as { items: ChunkItem[]; total: number; page: number; limit: number } | undefined;
+  const data = chunksQ.data?.data;
 
   return (
     <div className="space-y-4">
@@ -473,11 +481,12 @@ function TokensTab({
   page,
   setPage,
 }: {
-  tokensQ: ReturnType<typeof useQuery>;
+  // F-04 시정(2026-04-18): ReturnType 대신 UseQueryResult 로 generic 명시.
+  tokensQ: UseQueryResult<SingleResponse<TokenUsageListResponse>>;
   page: number;
   setPage: (p: number) => void;
 }) {
-  const data = tokensQ.data?.data as { items: TokenUsageItem[]; total: number; page: number; limit: number } | undefined;
+  const data = tokensQ.data?.data;
 
   return (
     <div className="space-y-4">

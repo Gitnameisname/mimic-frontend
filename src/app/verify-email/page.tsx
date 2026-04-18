@@ -22,14 +22,17 @@ function VerifyEmailContent() {
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    if (!token) {
-      setState("error");
-      setErrorMessage("유효하지 않은 인증 링크입니다.");
-      return;
-    }
-
     let cancelled = false;
+    // F-05 시정(2026-04-18): token 없음 케이스도 async 경로 안에서 setState 하여
+    //   효과 본문의 "동기적" setState (react-hooks/set-state-in-effect) 위반 제거.
     (async () => {
+      if (!token) {
+        if (!cancelled) {
+          setErrorMessage("유효하지 않은 인증 링크입니다.");
+          setState("error");
+        }
+        return;
+      }
       try {
         await authApi.verifyEmail({ token });
         if (!cancelled) setState("success");

@@ -278,18 +278,22 @@ export function AdminProposalsPage() {
   const [undoCountdown, setUndoCountdown] = useState(0);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // F-05 시정(2026-04-18): 효과 본문 동기 setState (set-state-in-effect) 제거.
+  //   lastBatchOp 변화 시점을 기준으로 Date.now() 경과를 계산하여 매 tick 에서
+  //   setUndoCountdown — 리셋을 위한 동기 setState 호출이 사라짐.
   useEffect(() => {
     if (!lastBatchOp) return;
-    setUndoCountdown(UNDO_SECONDS);
+    const startedAt = Date.now();
     countdownRef.current = setInterval(() => {
-      setUndoCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(countdownRef.current!);
-          setLastBatchOp(null);
-          return 0;
-        }
-        return prev - 1;
-      });
+      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+      const remaining = UNDO_SECONDS - elapsed;
+      if (remaining <= 0) {
+        if (countdownRef.current) clearInterval(countdownRef.current);
+        setUndoCountdown(0);
+        setLastBatchOp(null);
+        return;
+      }
+      setUndoCountdown(remaining);
     }, 1000);
     return () => {
       if (countdownRef.current) clearInterval(countdownRef.current);
@@ -318,6 +322,9 @@ export function AdminProposalsPage() {
       const ids = [...checkedIds];
       qc.invalidateQueries({ queryKey: ["admin", "proposals"] });
       setCheckedIds(new Set());
+      // F-05: 카운트다운 초기값은 이벤트 핸들러(여기) 에서 설정 — effect 내부
+      //   동기 setState 경로를 제거하기 위함.
+      setUndoCountdown(UNDO_SECONDS);
       setLastBatchOp({ ids, action: "approve" });
     },
   });
@@ -328,6 +335,7 @@ export function AdminProposalsPage() {
       const ids = [...checkedIds];
       qc.invalidateQueries({ queryKey: ["admin", "proposals"] });
       setCheckedIds(new Set());
+      setUndoCountdown(UNDO_SECONDS);
       setLastBatchOp({ ids, action: "reject" });
     },
   });

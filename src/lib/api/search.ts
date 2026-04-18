@@ -8,8 +8,12 @@ import type {
   UnifiedSearchResponse,
 } from "@/types/search";
 
-function buildQuery(params: Record<string, string | number | undefined>): string {
-  const entries = Object.entries(params).filter(
+// F-04 시정(2026-04-18): 호출부에서 `as Record<string, string | number | undefined>` 캐스팅이
+//   인덱스 시그니처 불일치로 TS2352 를 유발했음. object 로 완화하여 DocumentSearchParams /
+//   NodeSearchParams 같은 interface 를 캐스팅 없이 직접 전달할 수 있도록 함. 내부 Object.entries
+//   결과에 대해 undefined/null/"" 필터링과 String() 변환이 모두 수행되므로 런타임 의미는 유지됨.
+function buildQuery(params: object): string {
+  const entries = Object.entries(params as Record<string, unknown>).filter(
     ([, v]) => v !== undefined && v !== "" && v !== null
   );
   if (!entries.length) return "";
@@ -41,7 +45,7 @@ export const searchApi = {
 
   /** 문서 단위 전문 검색 */
   documents(params: DocumentSearchParams) {
-    const qs = buildQuery(params as Record<string, string | number | undefined>);
+    const qs = buildQuery(params);
     return api
       .get<ApiResponse<DocumentSearchResponse>>(`/api/v1/search/documents${qs}`)
       .then((r) => r.data);
@@ -49,7 +53,7 @@ export const searchApi = {
 
   /** 노드 단위 검색 */
   nodes(params: NodeSearchParams) {
-    const qs = buildQuery(params as Record<string, string | number | undefined>);
+    const qs = buildQuery(params);
     return api
       .get<ApiResponse<NodeSearchResponse>>(`/api/v1/search/nodes${qs}`)
       .then((r) => r.data);

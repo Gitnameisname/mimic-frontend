@@ -109,9 +109,10 @@ export interface AdminRole {
   created_at: string;
 }
 
-export interface AdminRoleDetail extends AdminRole {
-  // Future: permissions list
-}
+// F-05 시정(2026-04-18): 빈 interface extends 는 @typescript-eslint/no-empty-object-type
+//   위반(상위 타입과 동일). 향후 permissions 가 추가되기 전까지 type alias 로 유지하여
+//   동일한 의미를 표현하되 lint 는 통과시킴.
+export type AdminRoleDetail = AdminRole;
 
 // --- Permission Matrix (Task 14-10) ---
 

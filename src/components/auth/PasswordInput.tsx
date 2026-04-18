@@ -25,7 +25,8 @@ interface PasswordInputProps {
   showStrength?: boolean;
   autoComplete?: string;
   required?: boolean;
-  "aria-required"?: string;
+  // F-04 시정(2026-04-18): React 의 aria-required 타입(Booleanish)에 맞춤.
+  "aria-required"?: boolean | "true" | "false";
 }
 
 export function PasswordInput({

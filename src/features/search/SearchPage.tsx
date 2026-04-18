@@ -205,15 +205,22 @@ export function SearchPage() {
     })),
   ];
 
-  // URL q 파라미터가 변경되면 검색 상태 동기화
+  // URL q 파라미터가 변경되면 검색 상태 동기화.
+  // F-05 시정(2026-04-18): URL(외부 시스템) → 로컬 state 동기화 효과. React 19 의
+  //   set-state-in-effect 규칙은 이런 synchronize-to-external-source 케이스를
+  //   설계상 허용하지만 정적 검출이 불가능하여 일괄 경고한다. 의도된 동작임을
+  //   주석으로 명시하고 disable 처리. (대안: router state 에서 derived value 로
+  //   전환하는 추가 리팩터는 별건으로 진행)
   const prevQ = useRef(initialQ);
   useEffect(() => {
     const q = searchParams.get("q") ?? "";
     if (q !== prevQ.current) {
       prevQ.current = q;
+      /* eslint-disable react-hooks/set-state-in-effect -- URL(외부) → state 동기화. */
       setInputValue(q);
       setParams((prev) => ({ ...prev, q, page: 1 }));
       setTab("documents");
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [searchParams]);
 
@@ -409,7 +416,7 @@ export function SearchPage() {
               ))}
             </div>
           ) : isError ? (
-            <ErrorState message="검색 중 오류가 발생했습니다." retry={() => activeQuery.refetch()} />
+            <ErrorState description="검색 중 오류가 발생했습니다." retry={() => activeQuery.refetch()} />
           ) : tab === "documents" ? (
             docData && docData.results.length > 0 ? (
               <>
