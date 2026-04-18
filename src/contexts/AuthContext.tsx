@@ -84,15 +84,6 @@ export function getAccessToken(): string | null {
 
 function setAccessToken(token: string | null) {
   _accessToken = token;
-  // 레거시 호환 (Task 14-6/7에서 window.__mimir_at 사용 중 → 점진적 제거)
-  // TODO(S3-Phase1): JWT Bearer 전환 후 이 블록 제거
-  if (typeof window !== "undefined") {
-    if (token) {
-      window.__mimir_at = token;
-    } else {
-      delete window.__mimir_at;
-    }
-  }
 }
 
 // ─── Refresh 큐잉 (동시 401 → 1회만 refresh) ───

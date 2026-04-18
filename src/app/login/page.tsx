@@ -32,8 +32,9 @@ function LoginContent() {
   // 이미 인증된 사용자 → redirect 또는 홈으로 이동
   useEffect(() => {
     if (isAuthenticated) {
-      const redirect = searchParams.get("redirect");
-      router.replace(redirect ? decodeURIComponent(redirect) : "/");
+      const raw = searchParams.get("redirect");
+      const safeRedirect = raw && decodeURIComponent(raw).startsWith("/") ? decodeURIComponent(raw) : "/";
+      router.replace(safeRedirect);
     }
   }, [isAuthenticated, router, searchParams]);
 
@@ -60,9 +61,10 @@ function LoginContent() {
     setLoading(true);
     try {
       await login(form.identifier, form.password);
-      // 로그인 성공 → redirect 파라미터 또는 홈으로 이동
-      const redirect = searchParams.get("redirect");
-      router.push(redirect ? decodeURIComponent(redirect) : "/");
+      // 로그인 성공 → redirect 파라미터 또는 홈으로 이동 (외부 URL 차단)
+      const raw = searchParams.get("redirect");
+      const safeRedirect = raw && decodeURIComponent(raw).startsWith("/") ? decodeURIComponent(raw) : "/";
+      router.push(safeRedirect);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "로그인에 실패했습니다";

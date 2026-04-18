@@ -185,8 +185,8 @@ export default function ProfilePage() {
           </p>
         </div>
 
-        {/* 아바타 미리보기 */}
-        {avatarUrl.trim() && (
+        {/* 아바타 미리보기 — SEC4-FE-002: https/http 스킴만 허용 */}
+        {avatarUrl.trim() && /^https?:\/\//i.test(avatarUrl.trim()) && (
           <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg bg-gray-50 border border-gray-200" role="region" aria-label="아바타 미리보기">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-100 border border-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -194,6 +194,7 @@ export default function ProfilePage() {
                 src={avatarUrl.trim()}
                 alt="현재 입력한 아바타 URL의 미리보기 이미지"
                 className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = "none";
                 }}

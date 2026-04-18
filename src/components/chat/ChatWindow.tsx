@@ -18,6 +18,7 @@
  */
 
 import { useEffect, useRef, useCallback, useState } from "react";
+import { logError } from "@/lib/logger";
 import Link from "next/link";
 import { useConversationStore } from "@/stores/conversationStore";
 import { conversationApi, ragAnswerApi } from "@/lib/api/conversation";
@@ -100,7 +101,7 @@ export default function ChatWindow({
       setCurrentConversation(conv);
       loadMessagesFromTurns(turnsRes.turns);
     } catch (err) {
-      console.error("대화 로드 실패:", err);
+      logError(err, "ChatWindow.loadConversation");
     } finally {
       setLoading(false);
     }
@@ -124,7 +125,7 @@ export default function ChatWindow({
       clearConversation();
       onConversationChange?.("");
     } catch (err) {
-      console.error("대화 삭제 실패:", err);
+      logError(err, "ChatWindow.deleteConversation");
     }
   }, [currentConversation, clearConversation, onConversationChange]);
 

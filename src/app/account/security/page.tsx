@@ -97,8 +97,23 @@ export default function SecurityPage() {
     setGitlabLoading(true);
     try {
       const res = await accountApi.linkGitLab();
-      // GitLab 인증 페이지로 이동
-      window.location.href = res.data.url;
+      const redirectUrl = res.data.url;
+      // SSRF/오픈리다이렉트 방어: https 스킴 + 신뢰 도메인(NEXT_PUBLIC_GITLAB_HOST) 검증
+      let parsed: URL;
+      try {
+        parsed = new URL(redirectUrl);
+      } catch {
+        throw new Error("유효하지 않은 OAuth URL입니다");
+      }
+      const allowedHost = process.env.NEXT_PUBLIC_GITLAB_HOST ?? "";
+      const isHttps = parsed.protocol === "https:";
+      const isTrustedHost = allowedHost
+        ? parsed.hostname === allowedHost || parsed.hostname.endsWith(`.${allowedHost}`)
+        : parsed.hostname.includes("gitlab");
+      if (!isHttps || !isTrustedHost) {
+        throw new Error("신뢰하지 않는 OAuth 리다이렉트 URL입니다");
+      }
+      window.location.href = redirectUrl;
     } catch (err: unknown) {
       setGitlabError(err instanceof Error ? err.message : "GitLab 연결에 실패했습니다");
       setGitlabLoading(false);

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useExtractionStore } from "@/stores/extractionStore";
 import { cn } from "@/lib/utils";
 import type { ExtractionConfidenceScore } from "@/types/extraction";
@@ -49,6 +50,8 @@ export function FieldEditor({
   const setFieldValue = useExtractionStore((s) => s.setFieldValue);
   const setFieldReason = useExtractionStore((s) => s.setFieldReason);
 
+  const [jsonError, setJsonError] = useState<string | null>(null);
+
   const confidence = confidenceScores.find((c) => c.field_name === fieldName);
   const currentValue = fieldName in editedFields ? editedFields[fieldName] : originalValue;
   const isDirty = fieldName in editedFields && editedFields[fieldName] !== originalValue;
@@ -61,8 +64,9 @@ export function FieldEditor({
     } else if (fieldType === "json") {
       try {
         setFieldValue(fieldName, JSON.parse(raw));
+        setJsonError(null);
       } catch {
-        setFieldValue(fieldName, raw);
+        setJsonError("유효하지 않은 JSON 형식입니다. 저장 전 수정하세요.");
       }
     } else {
       setFieldValue(fieldName, raw);
@@ -103,13 +107,27 @@ export function FieldEditor({
           {renderValue(currentValue)}
         </p>
       ) : fieldType === "json" ? (
-        <textarea
-          className="w-full text-xs font-mono border border-gray-200 rounded p-2 min-h-[80px] focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={displayValue}
-          onChange={(e) => handleChange(e.target.value)}
-          aria-label={`${fieldName} 값 편집`}
-          spellCheck={false}
-        />
+        <>
+          <textarea
+            className={cn(
+              "w-full text-xs font-mono border rounded p-2 min-h-[80px] focus:outline-none focus:ring-2",
+              jsonError
+                ? "border-red-400 focus:ring-red-500"
+                : "border-gray-200 focus:ring-blue-500"
+            )}
+            value={displayValue}
+            onChange={(e) => handleChange(e.target.value)}
+            aria-label={`${fieldName} 값 편집`}
+            aria-describedby={jsonError ? `json-error-${fieldName}` : undefined}
+            aria-invalid={jsonError ? true : undefined}
+            spellCheck={false}
+          />
+          {jsonError && (
+            <p id={`json-error-${fieldName}`} role="alert" className="text-xs text-red-600 mt-1">
+              {jsonError}
+            </p>
+          )}
+        </>
       ) : fieldType === "date" ? (
         <input
           type="date"

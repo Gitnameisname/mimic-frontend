@@ -18,6 +18,11 @@ import {
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const IS_DEV = process.env.NODE_ENV === "development";
 
+// 동시 401 처리: refresh 완료 전 도착하는 요청들을 큐잉하여 1회 refresh 후 일괄 재시도
+let _isRedirecting = false;
+type QueueEntry = { resolve: (v: boolean) => void };
+const _waitQueue: QueueEntry[] = [];
+
 export class ApiError extends Error {
   /** 백엔드 error.code (예: "NOT_FOUND", "PERMISSION_DENIED") */
   code?: string;
@@ -52,9 +57,10 @@ async function request<T>(
   }
 
   // [개발 전용] AT 없을 때 X-Actor-Id/Role dev 헤더 fallback
-  // 백엔드 debug=True + environment=development 환경에서만 수락됨 (production 무시)
-  // TODO(S3-Phase1): JWT 전환 완료 시 이 블록 제거
-  if (IS_DEV && !at) {
+  // SEC3-FE-003: typeof window !== "undefined" 추가 — SSR/브라우저 빌드에서만 전송
+  // 백엔드 debug=True + environment=development/test 환경에서만 수락됨 (production 무시)
+  // TODO(S3-Phase1): JWT 전환 완료 시 이 블록 완전 제거
+  if (IS_DEV && !at && typeof window !== "undefined") {
     const { role, actorId } = useAuthzStore.getState();
     if (actorId) headers["X-Actor-Id"] = actorId;
     if (role) headers["X-Actor-Role"] = role;
@@ -73,15 +79,20 @@ async function request<T>(
       if (refreshed) {
         return request<T>(path, options, true);
       }
-      // 갱신 실패 → 로그인 페이지로 리다이렉트
-      if (typeof window !== "undefined") {
+      // 갱신 실패 → 로그인 페이지로 리다이렉트 (동시 401이 여러 개여도 1회만)
+      if (typeof window !== "undefined" && !_isRedirecting) {
         const currentPath = window.location.pathname;
-        // 로그인/공개 페이지에서는 리다이렉트 안 함
         const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email", "/auth/callback"];
         if (!publicPaths.some((p) => currentPath.startsWith(p))) {
+          _isRedirecting = true;
+          // 큐에 대기 중인 요청들은 모두 실패로 처리
+          _waitQueue.splice(0).forEach((entry) => entry.resolve(false));
           window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
           return new Promise(() => {}) as T; // 리다이렉트 중 pending
         }
+      }
+      if (_isRedirecting) {
+        return new Promise(() => {}) as T;
       }
     }
 

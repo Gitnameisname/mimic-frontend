@@ -278,9 +278,22 @@ function SearchConfigTab({ typeCode, pluginData }: { typeCode: string; pluginDat
 
   const mutation = useMutation({
     mutationFn: () => {
-      const parsed = JSON.parse(boostJson);
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(boostJson);
+      } catch {
+        throw new Error("유효하지 않은 JSON 형식입니다");
+      }
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        throw new Error("검색 부스트는 객체(key: number) 형식이어야 합니다");
+      }
+      for (const [k, v] of Object.entries(parsed)) {
+        if (typeof k !== "string" || typeof v !== "number") {
+          throw new Error(`"${k}": 숫자 가중치가 필요합니다`);
+        }
+      }
       return adminApi.updateDocumentTypePlugin(typeCode, {
-        search_config: { boost: parsed },
+        search_config: { boost: parsed as Record<string, number> },
       });
     },
     onSuccess: () => {
@@ -335,10 +348,20 @@ function MetadataSchemaTab({ typeCode, pluginData }: { typeCode: string; pluginD
   const [error, setError] = useState("");
 
   const mutation = useMutation({
-    mutationFn: () =>
-      adminApi.updateDocumentTypePlugin(typeCode, {
-        metadata_schema: JSON.parse(schemaJson),
-      }),
+    mutationFn: () => {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(schemaJson);
+      } catch {
+        throw new Error("유효하지 않은 JSON 형식입니다");
+      }
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        throw new Error("메타데이터 스키마는 JSON 객체여야 합니다");
+      }
+      return adminApi.updateDocumentTypePlugin(typeCode, {
+        metadata_schema: parsed as Record<string, unknown>,
+      });
+    },
     onSuccess: () => {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);

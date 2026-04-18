@@ -43,30 +43,6 @@ import type {
   CronPreviewResponse,
 } from "@/types/admin";
 
-/**
- * Zustand persist store(mimir-authz)에서 actor 정보를 읽어 dev 인증 헤더로 반환한다.
- *
- * [보안 임시 구현] Phase 8 JWT 연동 전까지 백엔드의 X-Actor-Id / X-Actor-Role dev 헤더를 사용.
- * - localStorage 저장으로 XSS 취약점 존재 (HttpOnly Cookie 대비 취약)
- * - production 환경에서는 백엔드가 debug=False 시 해당 헤더를 완전히 무시함
- * - S3 Phase 1에서 JWT Bearer + HttpOnly Cookie 방식으로 전환 예정
- * TODO(S3-Phase1): localStorage 의존성 제거, Authorization: Bearer <JWT> 헤더로 교체
- */
-function adminHeaders(): RequestInit {
-  const headers: Record<string, string> = {};
-  try {
-    const raw = typeof window !== "undefined" ? localStorage.getItem("mimir-authz") : null;
-    if (raw) {
-      const { state } = JSON.parse(raw) as { state?: { actorId?: string; role?: string } };
-      if (state?.actorId) headers["X-Actor-Id"] = state.actorId;
-      if (state?.role) headers["X-Actor-Role"] = state.role;
-    }
-  } catch {
-    // localStorage 접근 실패 시 헤더 없이 진행
-  }
-  return { headers };
-}
-
 // buildQueryString은 @/lib/utils에서 import
 
 // ---- Dashboard ----
@@ -75,23 +51,19 @@ export const adminApi = {
   // Dashboard
   getMetrics: () =>
     api.get<SingleResponse<DashboardMetrics>>(
-      "/api/v1/admin/dashboard/metrics",
-      adminHeaders()
+      "/api/v1/admin/dashboard/metrics"
     ),
   getHealth: () =>
     api.get<SingleResponse<DashboardHealth>>(
-      "/api/v1/admin/dashboard/health",
-      adminHeaders()
+      "/api/v1/admin/dashboard/health"
     ),
   getRecentErrors: () =>
     api.get<SingleResponse<RecentError[]>>(
-      "/api/v1/admin/dashboard/errors",
-      adminHeaders()
+      "/api/v1/admin/dashboard/errors"
     ),
   getRecentAuditLogs: () =>
     api.get<SingleResponse<RecentAuditLog[]>>(
-      "/api/v1/admin/dashboard/recent-audit-logs",
-      adminHeaders()
+      "/api/v1/admin/dashboard/recent-audit-logs"
     ),
 
   // Users
@@ -103,125 +75,105 @@ export const adminApi = {
     role?: string;
   } = {}) =>
     api.get<ListResponse<AdminUser>>(
-      `/api/v1/admin/users${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 20, search: params.search, status: params.status, role: params.role })}`,
-      adminHeaders()
+      `/api/v1/admin/users${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 20, search: params.search, status: params.status, role: params.role })}`
     ),
   getUser: (userId: string) =>
     api.get<SingleResponse<AdminUserDetail>>(
-      `/api/v1/admin/users/${userId}`,
-      adminHeaders()
+      `/api/v1/admin/users/${userId}`
     ),
   createUser: (body: { email: string; display_name: string; role_name?: string; status?: string }) =>
     api.post<SingleResponse<AdminUser>>(
       "/api/v1/admin/users",
-      body,
-      adminHeaders()
+      body
     ),
   updateUser: (userId: string, body: { display_name?: string; role_name?: string; status?: string }) =>
     api.patch<SingleResponse<AdminUser>>(
       `/api/v1/admin/users/${userId}`,
-      body,
-      adminHeaders()
+      body
     ),
   activateUser: (userId: string) =>
     api.post<SingleResponse<AdminUser>>(
       `/api/v1/admin/users/${userId}/activate`,
-      {},
-      adminHeaders()
+      {}
     ),
   deleteUser: (userId: string) =>
-    api.delete<void>(`/api/v1/admin/users/${userId}`, adminHeaders()),
+    api.delete<void>(`/api/v1/admin/users/${userId}`),
   assignOrgRole: (userId: string, body: { org_id: string; role_name: string }) =>
     api.post<SingleResponse<unknown>>(
       `/api/v1/admin/users/${userId}/org-roles`,
-      body,
-      adminHeaders()
+      body
     ),
   removeOrgRole: (userId: string, orgId: string) =>
-    api.delete<void>(`/api/v1/admin/users/${userId}/org-roles/${orgId}`, adminHeaders()),
+    api.delete<void>(`/api/v1/admin/users/${userId}/org-roles/${orgId}`),
 
   // Organizations
   getOrgs: (params: { page?: number; page_size?: number; search?: string } = {}) =>
     api.get<ListResponse<AdminOrg>>(
-      `/api/v1/admin/organizations${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 20, search: params.search })}`,
-      adminHeaders()
+      `/api/v1/admin/organizations${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 20, search: params.search })}`
     ),
   getOrg: (orgId: string) =>
     api.get<SingleResponse<AdminOrgDetail>>(
-      `/api/v1/admin/organizations/${orgId}`,
-      adminHeaders()
+      `/api/v1/admin/organizations/${orgId}`
     ),
   createOrg: (body: { name: string; description?: string }) =>
     api.post<SingleResponse<AdminOrg>>(
       "/api/v1/admin/organizations",
-      body,
-      adminHeaders()
+      body
     ),
   updateOrg: (orgId: string, body: { name?: string; description?: string; status?: string }) =>
     api.patch<SingleResponse<AdminOrg>>(
       `/api/v1/admin/organizations/${orgId}`,
-      body,
-      adminHeaders()
+      body
     ),
   deleteOrg: (orgId: string) =>
-    api.delete<void>(`/api/v1/admin/organizations/${orgId}`, adminHeaders()),
+    api.delete<void>(`/api/v1/admin/organizations/${orgId}`),
 
   // Roles
   getRoles: () =>
     api.get<ListResponse<AdminRole>>(
-      "/api/v1/admin/roles",
-      adminHeaders()
+      "/api/v1/admin/roles"
     ),
   getPermissionMatrix: () =>
     api.get<SingleResponse<PermissionMatrix>>(
-      "/api/v1/admin/roles/permissions/matrix",
-      adminHeaders()
+      "/api/v1/admin/roles/permissions/matrix"
     ),
 
   // System Settings (Phase 14-11)
   getAllSettings: () =>
     api.get<SingleResponse<AllSettingsResponse>>(
-      "/api/v1/admin/settings",
-      adminHeaders()
+      "/api/v1/admin/settings"
     ),
   getSettingsByCategory: (category: string) =>
     api.get<SingleResponse<SettingCategory>>(
-      `/api/v1/admin/settings/${encodeURIComponent(category)}`,
-      adminHeaders()
+      `/api/v1/admin/settings/${encodeURIComponent(category)}`
     ),
   updateSetting: (category: string, key: string, value: SettingValue) =>
     api.patch<SingleResponse<SettingItem>>(
       `/api/v1/admin/settings/${encodeURIComponent(category)}/${encodeURIComponent(key)}`,
-      { value },
-      adminHeaders()
+      { value }
     ),
 
   // Monitoring (Phase 14-12)
   getMonitoringComponents: () =>
     api.get<SingleResponse<ComponentStatusResponse>>(
-      "/api/v1/admin/monitoring/components",
-      adminHeaders()
+      "/api/v1/admin/monitoring/components"
     ),
   getResponseTimeTrend: (period: string = "24h") =>
     api.get<SingleResponse<ResponseTimeTrendResponse>>(
-      `/api/v1/admin/monitoring/response-times?period=${encodeURIComponent(period)}`,
-      adminHeaders()
+      `/api/v1/admin/monitoring/response-times?period=${encodeURIComponent(period)}`
     ),
   getErrorTrend: (period: string = "24h") =>
     api.get<SingleResponse<ErrorTrendResponse>>(
-      `/api/v1/admin/monitoring/error-trends?period=${encodeURIComponent(period)}`,
-      adminHeaders()
+      `/api/v1/admin/monitoring/error-trends?period=${encodeURIComponent(period)}`
     ),
   getRole: (roleId: string) =>
     api.get<SingleResponse<AdminRoleDetail>>(
-      `/api/v1/admin/roles/${roleId}`,
-      adminHeaders()
+      `/api/v1/admin/roles/${roleId}`
     ),
   createRole: (body: { name: string; description?: string }) =>
     api.post<SingleResponse<AdminRole>>(
       "/api/v1/admin/roles",
-      body,
-      adminHeaders()
+      body
     ),
 
   // Audit Logs
@@ -243,25 +195,21 @@ export const adminApi = {
         actor_id: params.actor_id,
         event_type: params.event_type,
         result: params.result,
-      })}`,
-      adminHeaders()
+      })}`
     ),
   getAuditLog: (eventId: string) =>
     api.get<SingleResponse<AuditLogDetail>>(
-      `/api/v1/admin/audit-logs/${eventId}`,
-      adminHeaders()
+      `/api/v1/admin/audit-logs/${eventId}`
     ),
 
   // Document Types
   getDocumentTypes: (params: { status?: string; search?: string } = {}) =>
     api.get<ListResponse<AdminDocumentType>>(
-      `/api/v1/admin/document-types${buildQueryString({ status: params.status, search: params.search })}`,
-      adminHeaders()
+      `/api/v1/admin/document-types${buildQueryString({ status: params.status, search: params.search })}`
     ),
   getDocumentType: (typeCode: string) =>
     api.get<SingleResponse<AdminDocumentTypeDetail>>(
-      `/api/v1/admin/document-types/${typeCode}`,
-      adminHeaders()
+      `/api/v1/admin/document-types/${typeCode}`
     ),
   createDocumentType: (body: {
     type_code: string;
@@ -272,8 +220,7 @@ export const adminApi = {
   }) =>
     api.post<SingleResponse<AdminDocumentTypeDetail>>(
       "/api/v1/admin/document-types",
-      body,
-      adminHeaders()
+      body
     ),
   updateDocumentType: (
     typeCode: string,
@@ -287,20 +234,17 @@ export const adminApi = {
   ) =>
     api.patch<SingleResponse<AdminDocumentTypeDetail>>(
       `/api/v1/admin/document-types/${typeCode}`,
-      body,
-      adminHeaders()
+      body
     ),
   deactivateDocumentType: (typeCode: string) =>
     api.delete<void>(
-      `/api/v1/admin/document-types/${typeCode}`,
-      adminHeaders()
+      `/api/v1/admin/document-types/${typeCode}`
     ),
 
   // Phase 12: 플러그인 설정 관리
   getDocumentTypePlugin: (typeCode: string) =>
     api.get<SingleResponse<DocTypePluginStatus>>(
-      `/api/v1/admin/document-types/${typeCode}/plugin`,
-      adminHeaders()
+      `/api/v1/admin/document-types/${typeCode}/plugin`
     ),
   updateDocumentTypePlugin: (
     typeCode: string,
@@ -316,13 +260,11 @@ export const adminApi = {
   ) =>
     api.put<SingleResponse<{ type_code: string; updated_fields: string[] }>>(
       `/api/v1/admin/document-types/${typeCode}/plugin`,
-      body,
-      adminHeaders()
+      body
     ),
   getDocumentTypeMetadataSchema: (typeCode: string) =>
     api.get<SingleResponse<{ type_code: string; schema: Record<string, unknown>; ui_schema: Record<string, unknown> }>>(
-      `/api/v1/admin/document-types/${typeCode}/plugin/schema`,
-      adminHeaders()
+      `/api/v1/admin/document-types/${typeCode}/plugin/schema`
     ),
 
   // Background Jobs
@@ -333,25 +275,21 @@ export const adminApi = {
     job_type?: string;
   } = {}) =>
     api.get<ListResponse<BackgroundJob>>(
-      `/api/v1/admin/jobs${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 30, status: params.status, job_type: params.job_type })}`,
-      adminHeaders()
+      `/api/v1/admin/jobs${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 30, status: params.status, job_type: params.job_type })}`
     ),
   getJobSummary: () =>
     api.get<SingleResponse<JobSummary>>(
-      "/api/v1/admin/jobs/summary",
-      adminHeaders()
+      "/api/v1/admin/jobs/summary"
     ),
   getJob: (jobId: string) =>
     api.get<SingleResponse<BackgroundJob>>(
-      `/api/v1/admin/jobs/${jobId}`,
-      adminHeaders()
+      `/api/v1/admin/jobs/${jobId}`
     ),
 
   // Indexing
   getIndexingJobs: (params: { page?: number; page_size?: number; status?: string } = {}) =>
     api.get<ListResponse<BackgroundJob>>(
-      `/api/v1/admin/indexing/jobs${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 30, status: params.status })}`,
-      adminHeaders()
+      `/api/v1/admin/indexing/jobs${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 30, status: params.status })}`
     ),
 
   // API Keys
@@ -362,8 +300,7 @@ export const adminApi = {
         page_size: params.page_size ?? 20,
         status: params.status,
         search: params.search,
-      })}`,
-      adminHeaders()
+      })}`
     ),
   // Phase 14-15
   createApiKey: (body: {
@@ -374,26 +311,22 @@ export const adminApi = {
   }) =>
     api.post<SingleResponse<ApiKeyWithSecret>>(
       "/api/v1/admin/api-keys",
-      body,
-      adminHeaders()
+      body
     ),
   revokeApiKey: (keyId: string, reason?: string) =>
     api.post<SingleResponse<{ id: string; name: string; status: string }>>(
       `/api/v1/admin/api-keys/${encodeURIComponent(keyId)}/revoke`,
-      { reason },
-      adminHeaders()
+      { reason }
     ),
   getAuditEventTypes: () =>
     api.get<SingleResponse<{ items: AuditEventTypeOption[] }>>(
-      "/api/v1/admin/audit-logs/event-types",
-      adminHeaders()
+      "/api/v1/admin/audit-logs/event-types"
     ),
 
   // Phase 10: Vectorization
   getVectorizationStats: () =>
     api.get<SingleResponse<VectorizationStats>>(
-      "/api/v1/vectorization/stats",
-      adminHeaders()
+      "/api/v1/vectorization/stats"
     ),
   getChunks: (params: {
     page?: number;
@@ -411,48 +344,40 @@ export const adminApi = {
         document_type: params.document_type,
         is_current: params.is_current ?? true,
         has_embedding: params.has_embedding,
-      })}`,
-      adminHeaders()
+      })}`
     ),
   reindexDocument: (documentId: string) =>
     api.post<SingleResponse<ReindexResult>>(
       `/api/v1/vectorization/documents/${documentId}`,
-      {},
-      adminHeaders()
+      {}
     ),
   reindexAll: (body: { document_type?: string; limit?: number } = {}) =>
     api.post<SingleResponse<BatchReindexResult>>(
       "/api/v1/vectorization/reindex-all",
-      body,
-      adminHeaders()
+      body
     ),
   cleanupChunks: (daysOld = 30) =>
     api.post<SingleResponse<{ deleted: number }>>(
       `/api/v1/vectorization/cleanup?days_old=${daysOld}`,
-      {},
-      adminHeaders()
+      {}
     ),
   getTokenUsage: (params: { page?: number; limit?: number } = {}) =>
     api.get<SingleResponse<TokenUsageListResponse>>(
-      `/api/v1/vectorization/token-usage${buildQueryString({ page: params.page ?? 1, limit: params.limit ?? 20 })}`,
-      adminHeaders()
+      `/api/v1/vectorization/token-usage${buildQueryString({ page: params.page ?? 1, limit: params.limit ?? 20 })}`
     ),
 
   // Alerts (Phase 14-13)
   getAlertMetrics: () =>
     api.get<SingleResponse<AlertMetricsResponse>>(
-      "/api/v1/admin/alerts/metrics",
-      adminHeaders()
+      "/api/v1/admin/alerts/metrics"
     ),
   getAlertRules: (enabledOnly = false) =>
     api.get<SingleResponse<AlertRule[]>>(
-      `/api/v1/admin/alerts/rules${buildQueryString({ enabled_only: enabledOnly })}`,
-      adminHeaders()
+      `/api/v1/admin/alerts/rules${buildQueryString({ enabled_only: enabledOnly })}`
     ),
   getAlertRule: (ruleId: string) =>
     api.get<SingleResponse<AlertRule>>(
-      `/api/v1/admin/alerts/rules/${encodeURIComponent(ruleId)}`,
-      adminHeaders()
+      `/api/v1/admin/alerts/rules/${encodeURIComponent(ruleId)}`
     ),
   createAlertRule: (body: {
     name: string;
@@ -466,8 +391,7 @@ export const adminApi = {
   }) =>
     api.post<SingleResponse<AlertRule>>(
       "/api/v1/admin/alerts/rules",
-      body,
-      adminHeaders()
+      body
     ),
   updateAlertRule: (
     ruleId: string,
@@ -484,13 +408,11 @@ export const adminApi = {
   ) =>
     api.patch<SingleResponse<AlertRule>>(
       `/api/v1/admin/alerts/rules/${encodeURIComponent(ruleId)}`,
-      body,
-      adminHeaders()
+      body
     ),
   deleteAlertRule: (ruleId: string) =>
     api.delete<SingleResponse<{ deleted: boolean }>>(
-      `/api/v1/admin/alerts/rules/${encodeURIComponent(ruleId)}`,
-      adminHeaders()
+      `/api/v1/admin/alerts/rules/${encodeURIComponent(ruleId)}`
     ),
   getAlertHistory: (params: {
     status?: string;
@@ -508,38 +430,32 @@ export const adminApi = {
         to: params.to,
         page: params.page ?? 1,
         page_size: params.page_size ?? 50,
-      })}`,
-      adminHeaders()
+      })}`
     ),
   acknowledgeAlert: (historyId: string) =>
     api.post<SingleResponse<unknown>>(
       `/api/v1/admin/alerts/history/${encodeURIComponent(historyId)}/acknowledge`,
-      {},
-      adminHeaders()
+      {}
     ),
   evaluateAlertsNow: () =>
     api.post<SingleResponse<AlertEvaluateStats>>(
       "/api/v1/admin/alerts/evaluate",
-      {},
-      adminHeaders()
+      {}
     ),
 
   // Job Schedules (Phase 14-14)
   getJobSchedules: () =>
     api.get<SingleResponse<JobSchedule[]>>(
-      "/api/v1/admin/jobs/schedules",
-      adminHeaders()
+      "/api/v1/admin/jobs/schedules"
     ),
   getJobSchedule: (jobId: string) =>
     api.get<SingleResponse<JobScheduleDetail>>(
-      `/api/v1/admin/jobs/schedules/${encodeURIComponent(jobId)}`,
-      adminHeaders()
+      `/api/v1/admin/jobs/schedules/${encodeURIComponent(jobId)}`
     ),
   runJobSchedule: (jobId: string) =>
     api.post<SingleResponse<{ message: string; run_id: string }>>(
       `/api/v1/admin/jobs/schedules/${encodeURIComponent(jobId)}/run`,
-      {},
-      adminHeaders()
+      {}
     ),
   updateJobSchedule: (
     jobId: string,
@@ -547,20 +463,17 @@ export const adminApi = {
   ) =>
     api.patch<SingleResponse<JobSchedule>>(
       `/api/v1/admin/jobs/schedules/${encodeURIComponent(jobId)}`,
-      body,
-      adminHeaders()
+      body
     ),
   cancelJobSchedule: (jobId: string) =>
     api.post<SingleResponse<{ message: string; run_id: string }>>(
       `/api/v1/admin/jobs/schedules/${encodeURIComponent(jobId)}/cancel`,
-      {},
-      adminHeaders()
+      {}
     ),
   previewCron: (schedule: string) =>
     api.post<SingleResponse<CronPreviewResponse>>(
       "/api/v1/admin/jobs/schedules/cron/preview",
-      { schedule },
-      adminHeaders()
+      { schedule }
     ),
 };
 

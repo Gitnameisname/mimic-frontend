@@ -7,6 +7,11 @@ import type {
   ConversationDetail,
   ConversationListResponse,
   SSEEvent,
+  SSEStartData,
+  SSEDeltaData,
+  SSECitationData,
+  SSEDoneData,
+  SSEErrorData,
 } from "@/types/rag";
 import { api } from "./client";
 
@@ -52,10 +57,10 @@ export const ragApi = {
 // ---------------------------------------------------------------------------
 
 export interface StreamCallbacks {
-  onStart?: (data: { conversation_id: string; message_id: string; model: string }) => void;
+  onStart?: (data: SSEStartData) => void;
   onDelta: (text: string) => void;
-  onCitation?: (citations: SSEEvent["data"]) => void;
-  onDone?: (data: { message_id: string; answer: string; token_used: number }) => void;
+  onCitation?: (data: SSECitationData) => void;
+  onDone?: (data: SSEDoneData) => void;
   onError?: (message: string) => void;
 }
 
@@ -120,21 +125,22 @@ export function queryStream(
           if (!line.startsWith("data: ")) continue;
           try {
             const payload: SSEEvent = JSON.parse(line.slice(6));
+            const d = payload.data as unknown;
             switch (payload.event) {
               case "start":
-                callbacks.onStart?.(payload.data as Parameters<NonNullable<StreamCallbacks["onStart"]>>[0]);
+                callbacks.onStart?.(d as SSEStartData);
                 break;
               case "delta":
-                callbacks.onDelta((payload.data as { text: string }).text);
+                callbacks.onDelta((d as SSEDeltaData).text);
                 break;
               case "citation":
-                callbacks.onCitation?.(payload.data);
+                callbacks.onCitation?.(d as SSECitationData);
                 break;
               case "done":
-                callbacks.onDone?.(payload.data as Parameters<NonNullable<StreamCallbacks["onDone"]>>[0]);
+                callbacks.onDone?.(d as SSEDoneData);
                 break;
               case "error":
-                callbacks.onError?.((payload.data as { message: string }).message);
+                callbacks.onError?.((d as SSEErrorData).message);
                 break;
             }
           } catch {

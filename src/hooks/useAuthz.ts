@@ -1,16 +1,14 @@
 "use client";
 
 /**
- * useAuthz — 프론트엔드 권한 확인 훅 (Phase 8 JWT 연동 전 임시 구현)
+ * useAuthz — 프론트엔드 권한 확인 훅
  *
- * 역할은 localStorage에 저장(zustand persist).
- * Phase 8에서 JWT 페이로드로 교체될 예정.
- *
- * 개발 중 역할 전환: DevRoleSwitcher 컴포넌트 또는 useAuthz().setRole() 호출.
+ * SEC3-FE-002: localStorage persist 제거 — 역할을 세션 메모리에만 저장.
+ * localStorage 저장 시 DevTools에서 role을 SUPER_ADMIN으로 위변조 가능하여 제거.
+ * TODO(S3-Phase1): JWT 페이로드 클레임 기반으로 교체.
  */
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 // ---- 타입 ----
 
@@ -56,17 +54,12 @@ interface AuthzState {
   setActorId: (id: string) => void;
 }
 
-export const useAuthzStore = create<AuthzState>()(
-  persist(
-    (set) => ({
-      role: "AUTHOR" as UserRole,
-      actorId: "00000000-0000-0000-0000-000000000001",
-      setRole: (role) => set({ role }),
-      setActorId: (actorId) => set({ actorId }),
-    }),
-    { name: "mimir-authz" }
-  )
-);
+export const useAuthzStore = create<AuthzState>()((set) => ({
+  role: "VIEWER" as UserRole,
+  actorId: "",
+  setRole: (role) => set({ role }),
+  setActorId: (actorId) => set({ actorId }),
+}));
 
 // ---- 훅 ----
 

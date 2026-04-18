@@ -54,13 +54,24 @@ function FilterBuilder({
   };
 
   const applyJson = () => {
+    let parsed: unknown;
     try {
-      const parsed = JSON.parse(jsonText) as FilterExpression;
-      onChange(parsed);
-      setJsonError(null);
+      parsed = JSON.parse(jsonText);
     } catch {
       setJsonError("JSON 형식이 올바르지 않습니다.");
+      return;
     }
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      setJsonError("FilterExpression은 JSON 객체여야 합니다.");
+      return;
+    }
+    const obj = parsed as Record<string, unknown>;
+    if (!("condition" in obj) && !("and" in obj) && !("or" in obj)) {
+      setJsonError("condition, and, or 중 하나의 키가 필요합니다.");
+      return;
+    }
+    onChange(parsed as FilterExpression);
+    setJsonError(null);
   };
 
   return (

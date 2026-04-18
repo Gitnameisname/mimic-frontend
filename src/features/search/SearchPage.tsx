@@ -1,5 +1,6 @@
 "use client";
 
+import DOMPurify from "dompurify";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useCallback, useEffect, useRef } from "react";
@@ -23,38 +24,17 @@ import { relativeTime } from "@/lib/utils";
 // 스니펫 하이라이팅 렌더러 (<b>...</b> → <mark>)
 // ---------------------------------------------------------------------------
 
-/**
- * ts_headline이 반환하는 <b>키워드</b> 마킹을 <mark>으로 변환해 렌더링한다.
- *
- * 보안: <b>/<\/b> 이외의 모든 HTML은 이스케이프 후 처리.
- * 1) 텍스트 전체를 HTML 이스케이프 (< → &lt; 등)
- * 2) 이스케이프된 &lt;b&gt; / &lt;/b&gt;만 <mark>으로 복원
- *
- * 이 방식으로 문서 원본의 악의적 HTML이 DOM에 주입되지 않는다.
- */
-function escapeHtmlExceptHighlight(raw: string): string {
-  // Step 1: 모든 HTML 특수문자 이스케이프
-  const escaped = raw
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-  // Step 2: ts_headline이 생성하는 &lt;b&gt; / &lt;/b&gt; 패턴만 <mark>으로 복원
-  const restored = escaped
-    .replace(/&lt;b&gt;/g, '<mark class="bg-yellow-100 text-yellow-900 rounded px-0.5">')
-    .replace(/&lt;\/b&gt;/g, "</mark>");
-  // Step 3: 복원 후 <mark> 이외의 HTML 태그가 남아있으면 안전을 위해 전부 제거
-  // (ts_headline이 예상치 않은 태그를 생성했을 때의 방어선)
-  const ALLOWED_TAG_RE = /<(?!\/?(mark)[\s>])[^>]+>/gi;
-  return restored.replace(ALLOWED_TAG_RE, "");
+function sanitizeSnippet(raw: string): string {
+  // ts_headline의 <b>태그를 <mark>으로 교체 후 DOMPurify로 허용 태그만 남긴다.
+  const withMark = raw.replace(/<b>/gi, '<mark class="bg-yellow-100 text-yellow-900 rounded px-0.5">').replace(/<\/b>/gi, "</mark>");
+  return DOMPurify.sanitize(withMark, { ALLOWED_TAGS: ["mark"], ALLOWED_ATTR: ["class"] });
 }
 
 function HighlightedSnippet({ html }: { html: string }) {
   return (
     <span
       className="text-sm text-gray-600 leading-relaxed"
-      dangerouslySetInnerHTML={{ __html: escapeHtmlExceptHighlight(html) }}
+      dangerouslySetInnerHTML={{ __html: sanitizeSnippet(html) }}
     />
   );
 }

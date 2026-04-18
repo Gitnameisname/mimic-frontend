@@ -31,23 +31,6 @@ import type {
   SingleResponse,
 } from "@/types/s2admin";
 
-// [보안 임시 구현] localStorage 기반 dev 헤더 — S3 Phase 1에서 JWT Bearer로 전환 예정
-// TODO(S3-Phase1): Authorization: Bearer <JWT> 헤더로 교체, localStorage 의존성 제거
-function adminHeaders(): RequestInit {
-  const headers: Record<string, string> = {};
-  try {
-    const raw = typeof window !== "undefined" ? localStorage.getItem("mimir-authz") : null;
-    if (raw) {
-      const { state } = JSON.parse(raw) as { state?: { actorId?: string; role?: string } };
-      if (state?.actorId) headers["X-Actor-Id"] = state.actorId;
-      if (state?.role) headers["X-Actor-Role"] = state.role;
-    }
-  } catch {
-    // ignore
-  }
-  return { headers };
-}
-
 // ── FG6.1: AI Platform ──
 
 export interface ProviderFormData {
@@ -62,84 +45,75 @@ export interface ProviderFormData {
 
 export const providersApi = {
   list: () =>
-    api.get<SingleResponse<LLMProvider[]>>("/api/v1/admin/providers", adminHeaders()),
+    api.get<SingleResponse<LLMProvider[]>>("/api/v1/admin/providers"),
 
   create: (body: ProviderFormData) =>
-    api.post<SingleResponse<LLMProvider>>("/api/v1/admin/providers", body, adminHeaders()),
+    api.post<SingleResponse<LLMProvider>>("/api/v1/admin/providers", body),
 
   update: (id: string, body: Partial<ProviderFormData> & { status?: string }) =>
     api.patch<SingleResponse<LLMProvider>>(
       `/api/v1/admin/providers/${id}`,
-      body,
-      adminHeaders()
+      body
     ),
 
   delete: (id: string) =>
-    api.delete<void>(`/api/v1/admin/providers/${id}`, adminHeaders()),
+    api.delete<void>(`/api/v1/admin/providers/${id}`),
 
   test: (id: string) =>
     api.post<SingleResponse<ProviderTestResult>>(
       `/api/v1/admin/providers/${id}/test`,
-      {},
-      adminHeaders()
+      {}
     ),
 
   setDefault: (id: string, type: "llm" | "embedding") =>
     api.post<SingleResponse<LLMProvider>>(
       `/api/v1/admin/providers/${id}/set-default`,
-      { type },
-      adminHeaders()
+      { type }
     ),
 };
 
 export const promptsApi = {
   list: (params?: { page?: number; page_size?: number }) =>
     api.get<PagedResponse<Prompt>>(
-      `/api/v1/admin/prompts${buildQueryString(params ?? {})}`,
-      adminHeaders()
+      `/api/v1/admin/prompts${buildQueryString(params ?? {})}`
     ),
 
   get: (id: string) =>
-    api.get<SingleResponse<Prompt>>(`/api/v1/admin/prompts/${id}`, adminHeaders()),
+    api.get<SingleResponse<Prompt>>(`/api/v1/admin/prompts/${id}`),
 
   create: (body: { name: string; description?: string; content: string }) =>
-    api.post<SingleResponse<Prompt>>("/api/v1/admin/prompts", body, adminHeaders()),
+    api.post<SingleResponse<Prompt>>("/api/v1/admin/prompts", body),
 
   newVersion: (id: string, body: { content: string }) =>
     api.post<SingleResponse<PromptVersion>>(
       `/api/v1/admin/prompts/${id}/versions`,
-      body,
-      adminHeaders()
+      body
     ),
 
   activateVersion: (id: string, versionId: string) =>
     api.post<SingleResponse<Prompt>>(
       `/api/v1/admin/prompts/${id}/versions/${versionId}/activate`,
-      {},
-      adminHeaders()
+      {}
     ),
 
   setABTest: (id: string, config: ABTestConfig | null) =>
     api.patch<SingleResponse<Prompt>>(
       `/api/v1/admin/prompts/${id}/ab-test`,
-      { ab_test_config: config },
-      adminHeaders()
+      { ab_test_config: config }
     ),
 };
 
 export const capabilitiesApi = {
   get: () =>
     api.get<SingleResponse<SystemCapabilities>>(
-      "/api/v1/system/capabilities",
-      adminHeaders()
+      "/api/v1/system/capabilities"
     ),
 };
 
 export const usageApi = {
   getDashboard: (params?: { days?: number; provider?: string }) =>
     api.get<SingleResponse<UsageDashboard>>(
-      `/api/v1/admin/usage${buildQueryString(params ?? {})}`,
-      adminHeaders()
+      `/api/v1/admin/usage${buildQueryString(params ?? {})}`
     ),
 
   exportCsv: (params?: { days?: number }) =>
@@ -151,50 +125,44 @@ export const usageApi = {
 export const agentsApi = {
   list: (params?: { page?: number; page_size?: number; status?: string }) =>
     api.get<PagedResponse<Agent>>(
-      `/api/v1/admin/agents${buildQueryString(params ?? {})}`,
-      adminHeaders()
+      `/api/v1/admin/agents${buildQueryString(params ?? {})}`
     ),
 
   get: (id: string) =>
-    api.get<SingleResponse<AgentDetail>>(`/api/v1/admin/agents/${id}`, adminHeaders()),
+    api.get<SingleResponse<AgentDetail>>(`/api/v1/admin/agents/${id}`),
 
   create: (body: { name: string; description?: string }) =>
-    api.post<SingleResponse<Agent>>("/api/v1/admin/agents", body, adminHeaders()),
+    api.post<SingleResponse<Agent>>("/api/v1/admin/agents", body),
 
   revokeDelegation: (agentId: string, userId: string) =>
     api.delete<SingleResponse<null>>(
-      `/api/v1/admin/agents/${agentId}/delegations/${userId}`,
-      adminHeaders()
+      `/api/v1/admin/agents/${agentId}/delegations/${userId}`
     ),
 
   block: (id: string, body: { duration: "1h" | "24h" | "permanent"; reject_pending?: boolean; reason?: string }) =>
     api.post<SingleResponse<Agent>>(
       `/api/v1/admin/agents/${id}/block`,
-      body,
-      adminHeaders()
+      body
     ),
 
   unblock: (id: string) =>
-    api.post<SingleResponse<Agent>>(`/api/v1/admin/agents/${id}/unblock`, {}, adminHeaders()),
+    api.post<SingleResponse<Agent>>(`/api/v1/admin/agents/${id}/unblock`, {}),
 
   reissueApiKey: (id: string, body: { expires_at: string }) =>
     api.post<SingleResponse<AgentApiKeyWithSecret>>(
       `/api/v1/admin/agents/${id}/api-keys`,
-      body,
-      adminHeaders()
+      body
     ),
 
   getRateLimits: (id: string) =>
     api.get<SingleResponse<AgentRateLimits>>(
-      `/api/v1/admin/agents/${id}/rate-limits`,
-      adminHeaders()
+      `/api/v1/admin/agents/${id}/rate-limits`
     ),
 
   updateRateLimits: (id: string, limits: AgentRateLimits) =>
     api.patch<SingleResponse<AgentRateLimits>>(
       `/api/v1/admin/agents/${id}/rate-limits`,
-      limits,
-      adminHeaders()
+      limits
     ),
 
   getAuditHistory: (
@@ -202,62 +170,53 @@ export const agentsApi = {
     params?: { start_date?: string; end_date?: string; action_type?: string; page?: number; page_size?: number }
   ) =>
     api.get<PagedResponse<AuditEvent>>(
-      `/api/v1/admin/agents/${id}/audit${buildQueryString(params ?? {})}`,
-      adminHeaders()
+      `/api/v1/admin/agents/${id}/audit${buildQueryString(params ?? {})}`
     ),
 };
 
 export const scopeProfilesApi = {
   list: (params?: { page?: number; page_size?: number }) =>
     api.get<PagedResponse<ScopeProfile>>(
-      `/api/v1/admin/scope-profiles${buildQueryString(params ?? {})}`,
-      adminHeaders()
+      `/api/v1/admin/scope-profiles${buildQueryString(params ?? {})}`
     ),
 
   get: (id: string) =>
     api.get<SingleResponse<ScopeProfileDetail>>(
-      `/api/v1/admin/scope-profiles/${id}`,
-      adminHeaders()
+      `/api/v1/admin/scope-profiles/${id}`
     ),
 
   create: (body: { name: string; description?: string }) =>
     api.post<SingleResponse<ScopeProfile>>(
       "/api/v1/admin/scope-profiles",
-      body,
-      adminHeaders()
+      body
     ),
 
   update: (id: string, body: { name?: string; description?: string }) =>
     api.patch<SingleResponse<ScopeProfile>>(
       `/api/v1/admin/scope-profiles/${id}`,
-      body,
-      adminHeaders()
+      body
     ),
 
   delete: (id: string) =>
     api.delete<SingleResponse<null>>(
-      `/api/v1/admin/scope-profiles/${id}`,
-      adminHeaders()
+      `/api/v1/admin/scope-profiles/${id}`
     ),
 
   addScope: (id: string, scope: ScopeEntry) =>
     api.post<SingleResponse<ScopeProfileDetail>>(
       `/api/v1/admin/scope-profiles/${id}/scopes`,
-      scope,
-      adminHeaders()
+      scope
     ),
 
   updateScope: (id: string, scopeName: string, scope: ScopeEntry) =>
     api.patch<SingleResponse<ScopeProfileDetail>>(
       `/api/v1/admin/scope-profiles/${id}/scopes/${scopeName}`,
-      scope,
-      adminHeaders()
+      scope
     ),
 
   deleteScope: (id: string, scopeName: string) =>
     api.delete<SingleResponse<null>>(
-      `/api/v1/admin/scope-profiles/${id}/scopes/${scopeName}`,
-      adminHeaders()
+      `/api/v1/admin/scope-profiles/${id}/scopes/${scopeName}`
     ),
 };
 
@@ -272,57 +231,49 @@ export const proposalsApi = {
     end_date?: string;
   }) =>
     api.get<PagedResponse<Proposal>>(
-      `/api/v1/admin/proposals${buildQueryString(params ?? {})}`,
-      adminHeaders()
+      `/api/v1/admin/proposals${buildQueryString(params ?? {})}`
     ),
 
   get: (id: string) =>
     api.get<SingleResponse<ProposalDetail>>(
-      `/api/v1/admin/proposals/${id}`,
-      adminHeaders()
+      `/api/v1/admin/proposals/${id}`
     ),
 
   approve: (id: string, feedback?: string) =>
     api.post<SingleResponse<Proposal>>(
       `/api/v1/admin/proposals/${id}/approve`,
-      { feedback },
-      adminHeaders()
+      { feedback }
     ),
 
   reject: (id: string, feedback?: string) =>
     api.post<SingleResponse<Proposal>>(
       `/api/v1/admin/proposals/${id}/reject`,
-      { feedback },
-      adminHeaders()
+      { feedback }
     ),
 
   batchApprove: (ids: string[]) =>
     api.post<SingleResponse<{ approved: number }>>(
       "/api/v1/admin/proposals/batch-approve",
-      { ids },
-      adminHeaders()
+      { ids }
     ),
 
   batchReject: (ids: string[], feedback?: string) =>
     api.post<SingleResponse<{ rejected: number }>>(
       "/api/v1/admin/proposals/batch-reject",
-      { ids, feedback },
-      adminHeaders()
+      { ids, feedback }
     ),
 
   batchRollback: (ids: string[], original_action: "approve" | "reject") =>
     api.post<SingleResponse<{ rolled_back: number; skipped: number; skipped_ids: string[] }>>(
       "/api/v1/admin/proposals/batch-rollback",
-      { ids, original_action },
-      adminHeaders()
+      { ids, original_action }
     ),
 };
 
 export const agentActivityApi = {
   getDashboard: (params?: { days?: number }) =>
     api.get<SingleResponse<AgentActivityDashboard>>(
-      `/api/v1/admin/agent-activity${buildQueryString(params ?? {})}`,
-      adminHeaders()
+      `/api/v1/admin/agent-activity${buildQueryString(params ?? {})}`
     ),
 };
 
@@ -331,76 +282,65 @@ export const agentActivityApi = {
 export const goldenSetsApi = {
   list: (params?: { page?: number; page_size?: number }) =>
     api.get<PagedResponse<GoldenSet>>(
-      `/api/v1/admin/golden-sets${buildQueryString(params ?? {})}`,
-      adminHeaders()
+      `/api/v1/admin/golden-sets${buildQueryString(params ?? {})}`
     ),
 
   get: (id: string) =>
     api.get<SingleResponse<GoldenSet & { items: GoldenSetItem[] }>>(
-      `/api/v1/admin/golden-sets/${id}`,
-      adminHeaders()
+      `/api/v1/admin/golden-sets/${id}`
     ),
 
   create: (body: { name: string; description?: string }) =>
     api.post<SingleResponse<GoldenSet>>(
       "/api/v1/admin/golden-sets",
-      body,
-      adminHeaders()
+      body
     ),
 };
 
 export const evaluationsApi = {
   listRuns: (params?: { page?: number; page_size?: number; golden_set_id?: string }) =>
     api.get<PagedResponse<EvaluationRun>>(
-      `/api/v1/admin/evaluation-runs${buildQueryString(params ?? {})}`,
-      adminHeaders()
+      `/api/v1/admin/evaluation-runs${buildQueryString(params ?? {})}`
     ),
 
   getMetricSeries: (params?: { days?: number }) =>
     api.get<SingleResponse<EvaluationMetricSeries[]>>(
-      `/api/v1/admin/evaluation-runs/metrics${buildQueryString(params ?? {})}`,
-      adminHeaders()
+      `/api/v1/admin/evaluation-runs/metrics${buildQueryString(params ?? {})}`
     ),
 };
 
 export const extractionSchemasApi = {
   list: () =>
     api.get<SingleResponse<ExtractionSchema[]>>(
-      "/api/v1/admin/extraction-schemas",
-      adminHeaders()
+      "/api/v1/admin/extraction-schemas"
     ),
 
   get: (docTypeCode: string) =>
     api.get<SingleResponse<ExtractionSchema & { fields: ExtractionSchemaField[] }>>(
-      `/api/v1/admin/extraction-schemas/${docTypeCode}`,
-      adminHeaders()
+      `/api/v1/admin/extraction-schemas/${docTypeCode}`
     ),
 };
 
 export const extractionQueueApi = {
   list: (params?: { page?: number; page_size?: number; document_type?: string; status?: string }) =>
     api.get<PagedResponse<ExtractionResult>>(
-      `/api/v1/admin/extraction-results${buildQueryString(params ?? {})}`,
-      adminHeaders()
+      `/api/v1/admin/extraction-results${buildQueryString(params ?? {})}`
     ),
 
   get: (id: string) =>
     api.get<SingleResponse<ExtractionResultDetail>>(
-      `/api/v1/admin/extraction-results/${id}`,
-      adminHeaders()
+      `/api/v1/admin/extraction-results/${id}`
     ),
 
   approve: (id: string, overrides?: Record<string, unknown>) =>
     api.post<SingleResponse<ExtractionResult>>(
       `/api/v1/admin/extraction-results/${id}/approve`,
-      { overrides },
-      adminHeaders()
+      { overrides }
     ),
 
   reject: (id: string, reason?: string) =>
     api.post<SingleResponse<ExtractionResult>>(
       `/api/v1/admin/extraction-results/${id}/reject`,
-      { reason },
-      adminHeaders()
+      { reason }
     ),
 };

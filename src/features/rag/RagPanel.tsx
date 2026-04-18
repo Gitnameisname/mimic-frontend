@@ -90,8 +90,8 @@ export function RagPanel({ documentId, onClose }: Props) {
           );
         },
         onCitation: (data) => {
-          const citations = data.citations as Citation[];
-          const chunks = data.context_chunks as RetrievedChunk[];
+          const citations = data.citations;
+          const chunks = data.context_chunks;
           setMessages((prev) =>
             prev.map((m) =>
               m.id === asstMsgId ? { ...m, citations, chunks } : m
