@@ -5,7 +5,7 @@
  * 회원가입, 로그인, 비밀번호 재설정, 이메일 인증 등.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8050";
 
 // ─── Request / Response 타입 ───
 

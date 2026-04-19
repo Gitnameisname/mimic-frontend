@@ -9,7 +9,7 @@ const scriptSrc = IS_DEV
   : "script-src 'self' 'unsafe-inline'";
 
 const connectSrc = IS_DEV
-  ? "connect-src 'self' http://localhost:8000 ws://localhost:*"
+  ? "connect-src 'self' http://localhost:8050 ws://localhost:*"
   : "connect-src 'self'";
 
 const securityHeaders = [

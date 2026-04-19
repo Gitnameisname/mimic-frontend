@@ -16,7 +16,7 @@ import type {
 import { api } from "./client";
 
 const IS_DEV = process.env.NODE_ENV === "development";
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8050";
 
 // ---------------------------------------------------------------------------
 // 비스트리밍 API

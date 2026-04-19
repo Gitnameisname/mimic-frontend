@@ -15,7 +15,7 @@ import {
   attemptSilentRefreshForInterceptor,
 } from "@/contexts/AuthContext";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8050";
 const IS_DEV = process.env.NODE_ENV === "development";
 
 // 동시 401 처리: refresh 완료 전 도착하는 요청들을 큐잉하여 1회 refresh 후 일괄 재시도

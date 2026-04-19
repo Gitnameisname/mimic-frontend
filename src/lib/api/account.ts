@@ -7,7 +7,7 @@
 
 import { getAccessToken } from "@/contexts/AuthContext";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8050";
 
 // ─── 타입 ───
 
