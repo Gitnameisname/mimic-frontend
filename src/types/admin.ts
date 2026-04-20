@@ -58,9 +58,10 @@ export interface AdminUser {
   display_name: string;
   status: string;
   role_name: string;
+  organizations?: string | null;
   last_login_at?: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface UserOrgRole {

@@ -117,6 +117,16 @@ export function AdminUsersPage() {
       ),
     },
     {
+      key: "organizations",
+      header: "조직",
+      render: (row) =>
+        row.organizations ? (
+          <span className="text-sm text-gray-700">{row.organizations}</span>
+        ) : (
+          <span className="text-xs text-gray-400">없음</span>
+        ),
+    },
+    {
       key: "status",
       header: "상태",
       width: "120px",
@@ -169,7 +179,7 @@ export function AdminUsersPage() {
         <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">사용자 관리</h1>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-all duration-200 active:scale-95 min-h-[40px] focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+          className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 active:scale-95 min-h-[40px] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -188,7 +198,7 @@ export function AdminUsersPage() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="이메일 또는 이름..."
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
             />
           </div>
           <div>
@@ -200,7 +210,7 @@ export function AdminUsersPage() {
                 setRole(e.target.value);
                 setPage(1);
               }}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 min-h-[40px]"
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 min-h-[40px]"
             >
               <option value="">전체</option>
               {ROLES.map((r) => (
@@ -217,7 +227,7 @@ export function AdminUsersPage() {
                 setStatus(e.target.value);
                 setPage(1);
               }}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 min-h-[40px]"
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 min-h-[40px]"
             >
               <option value="">전체</option>
               <option value="ACTIVE">활성</option>
@@ -228,7 +238,7 @@ export function AdminUsersPage() {
           </div>
           <button
             type="submit"
-            className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
           >
             검색
           </button>

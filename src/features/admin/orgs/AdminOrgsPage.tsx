@@ -177,7 +177,7 @@ function OrgDetailPanel({
               <input
                 value={editForm.name}
                 onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
               />
             </div>
             <div>
@@ -186,7 +186,7 @@ function OrgDetailPanel({
                 value={editForm.description}
                 onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
                 rows={2}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 resize-none"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"
               />
             </div>
             {editError && <p className="text-xs text-red-600 bg-red-50 px-2 py-1.5 rounded">{editError}</p>}
@@ -194,7 +194,7 @@ function OrgDetailPanel({
               <button
                 type="submit"
                 disabled={updateMutation.isPending}
-                className="flex-1 bg-red-600 text-white text-xs font-medium rounded-lg py-1.5 hover:bg-red-700 disabled:opacity-50 transition-colors"
+                className="flex-1 bg-blue-600 text-white text-xs font-medium rounded-lg py-1.5 hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
                 {updateMutation.isPending ? "저장 중..." : "저장"}
               </button>
@@ -355,7 +355,7 @@ export function AdminOrgsPage() {
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">조직 관리</h1>
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-all duration-200 active:scale-95 min-h-[40px] focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 active:scale-95 min-h-[40px] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -381,12 +381,12 @@ export function AdminOrgsPage() {
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="조직 이름..."
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
               />
             </div>
             <button
               type="submit"
-              className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
             >
               검색
             </button>

@@ -37,7 +37,7 @@ export function Pagination({ page, pageSize, total, onPageChange }: Props) {
               onClick={() => onPageChange(p)}
               className={`px-2.5 py-1 rounded text-xs transition-colors ${
                 p === page
-                  ? "bg-red-600 text-white font-medium"
+                  ? "bg-blue-600 text-white font-medium"
                   : "text-gray-600 hover:bg-gray-100"
               }`}
             >

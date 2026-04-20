@@ -81,7 +81,7 @@ function FilterBuilder({
         <button
           type="button"
           onClick={() => setMode(mode === "visual" ? "json" : "visual")}
-          className="text-xs font-semibold text-red-700 hover:text-red-800 px-2 py-1 rounded hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500"
+          className="text-xs font-semibold text-blue-700 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           {mode === "visual" ? "JSON 편집" : "시각 편집"}
         </button>
@@ -95,7 +95,7 @@ function FilterBuilder({
               <select
                 value={field}
                 onChange={(e) => setField(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full border border-gray-300 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {FIELD_OPTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
               </select>
@@ -105,7 +105,7 @@ function FilterBuilder({
               <select
                 value={op}
                 onChange={(e) => setOp(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full border border-gray-300 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {OPERATOR_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
@@ -116,7 +116,7 @@ function FilterBuilder({
                 type="text"
                 value={val}
                 onChange={(e) => setVal(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full border border-gray-300 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="값 또는 $ctx.field"
               />
             </div>
@@ -124,7 +124,7 @@ function FilterBuilder({
           <button
             type="button"
             onClick={applyCondition}
-            className="text-xs font-semibold text-red-700 border border-red-300 px-3 py-1.5 rounded-lg hover:bg-red-50 min-h-[32px] focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="text-xs font-semibold text-blue-700 border border-blue-300 px-3 py-1.5 rounded-lg hover:bg-blue-50 min-h-[32px] focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             조건 적용
           </button>
@@ -141,7 +141,7 @@ function FilterBuilder({
             value={jsonText}
             onChange={(e) => setJsonText(e.target.value)}
             rows={6}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-red-500 resize-y"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
             placeholder='{"condition": {"field": "organization_id", "op": "eq", "value": "$ctx.organization_id"}}'
             aria-label="ACL 필터 JSON"
           />
@@ -149,7 +149,7 @@ function FilterBuilder({
           <button
             type="button"
             onClick={applyJson}
-            className="text-xs font-semibold text-red-700 border border-red-300 px-3 py-1.5 rounded-lg hover:bg-red-50 min-h-[32px] focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="text-xs font-semibold text-blue-700 border border-blue-300 px-3 py-1.5 rounded-lg hover:bg-blue-50 min-h-[32px] focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             JSON 적용
           </button>
@@ -185,7 +185,7 @@ function AddScopeModal({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="예: read:documents"
               aria-required="true"
             />
@@ -198,7 +198,7 @@ function AddScopeModal({
             type="button"
             disabled={!name.trim()}
             onClick={() => { onAdd({ name, filter }); onClose(); }}
-            className="flex-1 py-2.5 rounded-lg bg-red-700 text-white text-sm font-semibold hover:bg-red-800 min-h-[44px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-offset-2"
+            className="flex-1 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 min-h-[44px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             추가
           </button>
@@ -269,7 +269,7 @@ function ScopeProfileDetailPanel({
               <button
                 type="button"
                 onClick={() => setShowAddScope(true)}
-                className="text-xs font-semibold text-red-700 hover:text-red-800 px-3 py-1.5 rounded-lg hover:bg-red-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="text-xs font-semibold text-blue-700 hover:text-blue-800 px-3 py-1.5 rounded-lg hover:bg-blue-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 + Scope 추가
               </button>
@@ -370,18 +370,18 @@ function CreateProfileModal({ onClose, onCreated }: { onClose: () => void; onCre
               <label htmlFor="sp-name" className="block text-sm font-semibold text-gray-700 mb-1.5">
                 이름 <span className="text-red-500" aria-hidden="true">*</span>
               </label>
-              <input id="sp-name" type="text" {...register("name")} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="예: team_read_only" aria-required="true" />
+              <input id="sp-name" type="text" {...register("name")} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="예: team_read_only" aria-required="true" />
               {errors.name && <p className="mt-1 text-xs text-red-600" role="alert">{errors.name.message}</p>}
             </div>
             <div>
               <label htmlFor="sp-desc" className="block text-sm font-semibold text-gray-700 mb-1.5">설명</label>
-              <textarea id="sp-desc" {...register("description")} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none" placeholder="Profile 설명..." />
+              <textarea id="sp-desc" {...register("description")} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Profile 설명..." />
             </div>
           </div>
           {mut.isError && <p className="mb-3 text-xs text-red-600" role="alert">생성 중 오류가 발생했습니다.</p>}
           <div className="flex gap-3">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 min-h-[44px]">취소</button>
-            <button type="submit" disabled={isSubmitting || mut.isPending} className="flex-1 py-2.5 rounded-lg bg-red-700 text-white text-sm font-semibold hover:bg-red-800 min-h-[44px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-offset-2">
+            <button type="submit" disabled={isSubmitting || mut.isPending} className="flex-1 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 min-h-[44px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
               {mut.isPending ? "생성 중..." : "생성"}
             </button>
           </div>
@@ -431,7 +431,7 @@ export function AdminScopeProfilesPage() {
         <button
           type="button"
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-700 text-white text-sm font-semibold hover:bg-red-800 transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-offset-2"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -445,7 +445,7 @@ export function AdminScopeProfilesPage() {
       ) : isError ? (
         <div className="flex flex-col items-center py-12 gap-3">
           <p className="text-sm text-gray-500">Scope Profile 목록을 불러오지 못했습니다.</p>
-          <button type="button" onClick={() => refetch()} className="text-sm text-red-700 font-semibold px-4 py-2 rounded-lg hover:bg-red-50 min-h-[44px]">다시 시도</button>
+          <button type="button" onClick={() => refetch()} className="text-sm text-blue-700 font-semibold px-4 py-2 rounded-lg hover:bg-blue-50 min-h-[44px]">다시 시도</button>
         </div>
       ) : profiles.length === 0 ? (
         <div className="text-center py-16 text-gray-500 text-sm">등록된 Scope Profile이 없습니다.</div>
@@ -464,7 +464,20 @@ export function AdminScopeProfilesPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {profiles.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => setSelected(p)}>
+                  <tr
+                    key={p.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${p.name} Scope Profile 상세 열기`}
+                    className="hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus-visible:bg-blue-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+                    onClick={() => setSelected(p)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelected(p);
+                      }
+                    }}
+                  >
                     <td className="px-4 py-3 font-semibold text-gray-900">{p.name}</td>
                     <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{p.description ?? "-"}</td>
                     <td className="px-4 py-3 text-gray-700">{p.scopes_count}</td>
@@ -473,7 +486,7 @@ export function AdminScopeProfilesPage() {
                       <button
                         type="button"
                         onClick={() => setSelected(p)}
-                        className="text-xs font-semibold text-red-700 hover:text-red-800 px-3 py-1.5 rounded-lg hover:bg-red-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="text-xs font-semibold text-blue-700 hover:text-blue-800 px-3 py-1.5 rounded-lg hover:bg-blue-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         상세
                       </button>
@@ -494,7 +507,7 @@ export function AdminScopeProfilesPage() {
                         <button
                           type="button"
                           onClick={() => setConfirmDeleteId(p.id)}
-                          className="text-xs font-semibold text-gray-500 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-red-500"
+                          className="text-xs font-semibold text-gray-500 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           삭제
                         </button>

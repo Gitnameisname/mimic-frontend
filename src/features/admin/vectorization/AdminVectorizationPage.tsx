@@ -156,7 +156,7 @@ export function AdminVectorizationPage() {
               reindexAllMutation.mutate();
             }}
             disabled={reindexAllMutation.isPending}
-            className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
             {reindexAllMutation.isPending ? "재색인 중..." : "전체 재색인"}
           </button>
@@ -248,7 +248,7 @@ export function AdminVectorizationPage() {
               className={cn(
                 "pb-2 text-sm font-medium border-b-2 transition-colors",
                 activeTab === tab
-                  ? "border-red-500 text-red-600"
+                  ? "border-blue-500 text-blue-600"
                   : "border-transparent text-gray-500 hover:text-gray-700"
               )}
             >
@@ -378,7 +378,7 @@ function ChunksTab({
           placeholder="문서 유형 필터 (예: POLICY)"
           value={filterDocType}
           onChange={(e) => { setFilterDocType(e.target.value.toUpperCase()); setPage(1); }}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-48 focus:outline-none focus:ring-1 focus:ring-red-400"
+          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-48 focus:outline-none focus:ring-1 focus:ring-blue-400"
         />
         <select
           value={filterHasEmbedding === undefined ? "" : String(filterHasEmbedding)}
@@ -386,7 +386,7 @@ function ChunksTab({
             setFilterHasEmbedding(e.target.value === "" ? undefined : e.target.value === "true");
             setPage(1);
           }}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-red-400"
+          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
         >
           <option value="">전체 (임베딩 여부)</option>
           <option value="true">임베딩 완료</option>

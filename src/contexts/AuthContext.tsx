@@ -26,6 +26,7 @@ import {
   useRef,
   type ReactNode,
 } from "react";
+import { useAuthzStore } from "@/hooks/useAuthz";
 
 // ─── 타입 ───
 
@@ -183,6 +184,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const profile = await fetchProfile(at);
         if (profile) {
           dispatch({ type: "LOGIN_SUCCESS", payload: { user: profile, accessToken: at } });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          useAuthzStore.getState().setRole(profile.role_name as any);
+          useAuthzStore.getState().setActorId(profile.id);
           return true;
         }
         return false;
@@ -278,6 +282,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!profile) throw new Error("프로필을 불러올 수 없습니다");
 
       dispatch({ type: "LOGIN_SUCCESS", payload: { user: profile, accessToken: at } });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useAuthzStore.getState().setRole(profile.role_name as any);
+      useAuthzStore.getState().setActorId(profile.id);
     },
     [fetchProfile],
   );
@@ -296,6 +303,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!profile) throw new Error("프로필을 불러올 수 없습니다");
 
       dispatch({ type: "LOGIN_SUCCESS", payload: { user: profile, accessToken: at } });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useAuthzStore.getState().setRole(profile.role_name as any);
+      useAuthzStore.getState().setActorId(profile.id);
     },
     [fetchProfile],
   );
@@ -312,6 +322,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setAccessToken(null);
     dispatch({ type: "LOGOUT" });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    useAuthzStore.getState().setRole("VIEWER" as any);
+    useAuthzStore.getState().setActorId("");
   }, []);
 
   // ─── 역할 확인 ───

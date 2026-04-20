@@ -172,7 +172,7 @@ function ProposalDetailPanel({
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
                 rows={3}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 placeholder="피드백을 입력하세요..."
                 aria-label="검토 피드백"
               />
@@ -406,7 +406,7 @@ export function AdminProposalsPage() {
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); setCheckedIds(new Set()); }}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 min-h-[40px]"
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[40px]"
             aria-label="상태 필터"
           >
             <option value="">전체</option>
@@ -432,7 +432,7 @@ export function AdminProposalsPage() {
       ) : isError ? (
         <div className="flex flex-col items-center py-12 gap-3">
           <p className="text-sm text-gray-500">제안 목록을 불러오지 못했습니다.</p>
-          <button type="button" onClick={() => refetch()} className="text-sm text-red-700 font-semibold px-4 py-2 rounded-lg hover:bg-red-50 min-h-[44px]">다시 시도</button>
+          <button type="button" onClick={() => refetch()} className="text-sm text-blue-700 font-semibold px-4 py-2 rounded-lg hover:bg-blue-50 min-h-[44px]">다시 시도</button>
         </div>
       ) : proposals.length === 0 ? (
         <div className="text-center py-16 text-gray-500 text-sm">제안이 없습니다.</div>
@@ -449,7 +449,7 @@ export function AdminProposalsPage() {
                           type="checkbox"
                           checked={pendingProposals.length > 0 && checkedIds.size === pendingProposals.length}
                           onChange={toggleAll}
-                          className="w-4 h-4 text-red-700 rounded focus:ring-red-500"
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                           aria-label="전체 선택"
                         />
                       ) : null}
@@ -466,8 +466,23 @@ export function AdminProposalsPage() {
                   {proposals.map((p) => (
                     <tr
                       key={p.id}
-                      className={cn("hover:bg-gray-50 transition-colors cursor-pointer", checkedIds.has(p.id) && "bg-red-50")}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${p.agent_name}의 ${p.document_title} 제안 상세 열기`}
+                      className={cn(
+                        "hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500",
+                        checkedIds.has(p.id) ? "bg-blue-50" : "focus-visible:bg-blue-50"
+                      )}
                       onClick={() => setSelected(p)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          const target = e.target as HTMLElement;
+                          // checkbox 등 중첩 인터랙티브 요소는 제외
+                          if (target.tagName === "INPUT" || target.tagName === "BUTTON") return;
+                          e.preventDefault();
+                          setSelected(p);
+                        }
+                      }}
                     >
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         {p.status === "pending" && (
@@ -475,7 +490,7 @@ export function AdminProposalsPage() {
                             type="checkbox"
                             checked={checkedIds.has(p.id)}
                             onChange={() => toggleCheck(p.id)}
-                            className="w-4 h-4 text-red-700 rounded focus:ring-red-500"
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                             aria-label={`${p.document_title} 선택`}
                           />
                         )}
@@ -491,7 +506,7 @@ export function AdminProposalsPage() {
                         <button
                           type="button"
                           onClick={() => setSelected(p)}
-                          className="text-xs font-semibold text-red-700 hover:text-red-800 px-3 py-1.5 rounded-lg hover:bg-red-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-red-500"
+                          className="text-xs font-semibold text-blue-700 hover:text-blue-800 px-3 py-1.5 rounded-lg hover:bg-blue-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           상세
                         </button>

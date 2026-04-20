@@ -21,6 +21,7 @@ export type UserRole =
   | "SUPER_ADMIN";
 
 export type AuthzAction =
+  | "document.create"
   | "document.edit"
   | "document.delete"
   | "workflow.submit-review"
@@ -34,6 +35,7 @@ export type AuthzAction =
 // ---- 권한 매트릭스 (백엔드 authorization.py와 동기화 유지) ----
 
 const PERMISSION_MAP: Record<AuthzAction, ReadonlyArray<UserRole>> = {
+  "document.create": ["AUTHOR", "ORG_ADMIN", "SUPER_ADMIN"],
   "document.edit": ["AUTHOR", "ORG_ADMIN", "SUPER_ADMIN"],
   "document.delete": ["ORG_ADMIN", "SUPER_ADMIN"],
   "workflow.submit-review": ["AUTHOR", "ORG_ADMIN", "SUPER_ADMIN"],

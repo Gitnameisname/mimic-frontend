@@ -235,7 +235,7 @@ export function AdminJobsPage() {
               <select
                 value={status}
                 onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
               >
                 <option value="">전체</option>
                 <option value="PENDING">대기</option>

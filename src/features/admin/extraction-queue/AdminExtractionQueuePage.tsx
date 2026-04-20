@@ -171,7 +171,7 @@ function ExtractionDetailPanel({
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
                   rows={2}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   placeholder="반려 시 사유 입력..."
                 />
               </div>
@@ -180,7 +180,7 @@ function ExtractionDetailPanel({
                   type="button"
                   disabled={rejectMut.isPending || approveMut.isPending}
                   onClick={() => rejectMut.mutate()}
-                  className="flex-1 py-2.5 rounded-lg bg-red-50 border border-red-300 text-red-700 text-sm font-semibold hover:bg-red-100 min-h-[44px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="flex-1 py-2.5 rounded-lg bg-red-50 border border-red-300 text-red-700 text-sm font-semibold hover:bg-red-100 min-h-[44px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {rejectMut.isPending ? "처리 중..." : "반려"}
                 </button>
@@ -235,7 +235,7 @@ export function AdminExtractionQueuePage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 min-h-[40px]"
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[40px]"
             aria-label="상태 필터"
           >
             <option value="">전체</option>
@@ -246,7 +246,7 @@ export function AdminExtractionQueuePage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 min-h-[40px]"
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[40px]"
             aria-label="DocumentType 필터"
           >
             <option value="">전체 타입</option>
@@ -273,7 +273,20 @@ export function AdminExtractionQueuePage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {results.map((r) => (
-                <tr key={r.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => setSelected(r)}>
+                <tr
+                  key={r.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${r.document_title} 추출 결과 검토`}
+                  className="hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus-visible:bg-blue-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+                  onClick={() => setSelected(r)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelected(r);
+                    }
+                  }}
+                >
                   <td className="px-4 py-3 font-semibold text-gray-900 max-w-xs truncate">{r.document_title}</td>
                   <td className="px-4 py-3 text-gray-600 font-mono text-xs">{r.document_type_code}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
@@ -284,7 +297,7 @@ export function AdminExtractionQueuePage() {
                     <button
                       type="button"
                       onClick={() => setSelected(r)}
-                      className="text-xs font-semibold text-red-700 hover:text-red-800 px-3 py-1.5 rounded-lg hover:bg-red-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="text-xs font-semibold text-blue-700 hover:text-blue-800 px-3 py-1.5 rounded-lg hover:bg-blue-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       검토
                     </button>

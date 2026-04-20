@@ -162,9 +162,9 @@ export function AdminUsagePage() {
                 key={opt.value}
                 type="button"
                 onClick={() => setDays(opt.value as 7 | 30 | 90)}
-                className={`px-3 py-2 text-sm font-semibold transition-colors min-h-[40px] focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-inset ${
+                className={`px-3 py-2 text-sm font-semibold transition-colors min-h-[40px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${
                   days === opt.value
-                    ? "bg-red-700 text-white"
+                    ? "bg-blue-600 text-white"
                     : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
                 aria-pressed={days === opt.value}
@@ -189,7 +189,7 @@ export function AdminUsagePage() {
       ) : isError ? (
         <div className="flex flex-col items-center py-12 gap-3">
           <p className="text-sm text-gray-500">사용량 데이터를 불러오지 못했습니다.</p>
-          <button type="button" onClick={() => refetch()} className="text-sm text-red-700 font-semibold px-4 py-2 rounded-lg hover:bg-red-50 min-h-[44px]">
+          <button type="button" onClick={() => refetch()} className="text-sm text-blue-700 font-semibold px-4 py-2 rounded-lg hover:bg-blue-50 min-h-[44px]">
             다시 시도
           </button>
         </div>

@@ -280,7 +280,7 @@ function JobScheduleRow({
             aria-expanded={isOpen}
             onClick={(e) => { e.stopPropagation(); onToggle(); }}
             className="p-1 text-gray-400 hover:text-gray-700 rounded
-              focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+              focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
           >
             <span aria-hidden="true" className={`inline-block transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
           </button>
@@ -318,7 +318,7 @@ function JobScheduleRow({
                   type="button"
                   onClick={onCancel}
                   className="px-2 py-1 text-xs text-red-700 bg-red-50 hover:bg-red-100 rounded
-                    focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none min-h-[32px]"
+                    focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none min-h-[32px]"
                 >
                   취소
                 </button>
@@ -329,8 +329,8 @@ function JobScheduleRow({
                   <button
                     type="button"
                     onClick={onRun}
-                    className="px-2 py-1 text-xs text-white bg-red-600 hover:bg-red-700 rounded
-                      focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none min-h-[32px]"
+                    className="px-2 py-1 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded
+                      focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none min-h-[32px]"
                   >
                     실행
                   </button>
@@ -338,7 +338,7 @@ function JobScheduleRow({
                     type="button"
                     onClick={onEditSchedule}
                     className="px-2 py-1 text-xs text-gray-700 hover:bg-gray-100 rounded
-                      focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none min-h-[32px]"
+                      focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none min-h-[32px]"
                   >
                     설정
                   </button>
@@ -521,7 +521,7 @@ function ScheduleEditorModal({
               maxLength={120}
               required
               className="flex-1 px-3 py-2 text-sm font-mono border border-gray-300 rounded-lg
-                focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+                focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
             />
             <button
               type="button"
@@ -529,7 +529,7 @@ function ScheduleEditorModal({
               disabled={!expr.trim() || previewMutation.isPending}
               className="px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg
                 hover:bg-gray-50 min-h-[36px] disabled:opacity-50
-                focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+                focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
             >
               미리보기
             </button>
@@ -561,7 +561,7 @@ function ScheduleEditorModal({
             type="checkbox"
             checked={enabled}
             onChange={(e) => setEnabled(e.target.checked)}
-            className="w-4 h-4 text-red-600 rounded border-gray-300 focus-visible:ring-2 focus-visible:ring-red-500"
+            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus-visible:ring-2 focus-visible:ring-blue-500"
           />
           활성화
         </label>

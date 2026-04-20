@@ -118,7 +118,7 @@ function ErrorFallback({
         <button
           type="button"
           onClick={onRetry}
-          className="text-sm text-red-700 hover:text-red-800 font-semibold px-4 py-2 rounded-lg hover:bg-red-50 transition-all duration-200 min-h-[44px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+          className="text-sm text-blue-700 hover:text-blue-800 font-semibold px-4 py-2 rounded-lg hover:bg-blue-50 transition-all duration-200 min-h-[44px] inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           다시 시도
         </button>
@@ -279,7 +279,7 @@ export function AdminDashboardPage() {
             <h2 className="text-lg font-bold text-gray-900">벡터화 파이프라인 현황</h2>
             <a
               href="/admin/vectorization"
-              className="text-sm text-red-600 hover:text-red-700 font-medium px-3 py-2 rounded hover:bg-red-50 transition-all duration-200 min-h-[44px] inline-flex items-center"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium px-3 py-2 rounded hover:bg-blue-50 transition-all duration-200 min-h-[44px] inline-flex items-center"
             >
               상세 관리
               <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -375,7 +375,7 @@ export function AdminDashboardPage() {
             <h2 className="text-lg font-bold text-gray-900">최근 오류</h2>
             <a
               href="/admin/monitoring"
-              className="text-sm text-red-600 hover:text-red-700 font-medium px-3 py-2 rounded hover:bg-red-50 transition-all duration-200 min-h-[44px] inline-flex items-center"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium px-3 py-2 rounded hover:bg-blue-50 transition-all duration-200 min-h-[44px] inline-flex items-center"
             >
               모니터링
               <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -446,7 +446,7 @@ export function AdminDashboardPage() {
           <h2 className="text-lg font-bold text-gray-900">최근 감사 이벤트</h2>
           <a
             href="/admin/audit-logs"
-            className="text-sm text-red-600 hover:text-red-700 font-medium px-3 py-2 rounded hover:bg-red-50 transition-all duration-200 min-h-[44px] inline-flex items-center"
+            className="text-sm text-blue-600 hover:text-blue-700 font-medium px-3 py-2 rounded hover:bg-blue-50 transition-all duration-200 min-h-[44px] inline-flex items-center"
           >
             전체 보기
             <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">

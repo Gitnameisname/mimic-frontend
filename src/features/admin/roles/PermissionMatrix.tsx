@@ -130,7 +130,7 @@ export function PermissionMatrix() {
                         onClick={() => toggle(group.name)}
                         aria-expanded={!isCollapsed}
                         aria-controls={`group-${group.name}`}
-                        className="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-widest hover:text-gray-900 min-h-[36px] w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1 rounded"
+                        className="flex items-center gap-2 text-xs font-bold text-gray-700 uppercase tracking-widest hover:text-gray-900 min-h-[36px] w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 rounded"
                       >
                         <svg
                           className={cn(

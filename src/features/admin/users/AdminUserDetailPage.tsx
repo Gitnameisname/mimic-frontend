@@ -65,7 +65,7 @@ function EditUserModal({
               type="text"
               value={form.display_name}
               onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
             />
           </div>
           <div>
@@ -73,7 +73,7 @@ function EditUserModal({
             <select
               value={form.role_name}
               onChange={(e) => setForm((f) => ({ ...f, role_name: e.target.value }))}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
             >
               {ROLES.map((r) => (
                 <option key={r} value={r}>{r}</option>
@@ -85,7 +85,7 @@ function EditUserModal({
             <select
               value={form.status}
               onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
             >
               <option value="ACTIVE">활성</option>
               <option value="INACTIVE">비활성</option>
@@ -97,7 +97,7 @@ function EditUserModal({
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="flex-1 bg-red-600 text-white text-sm font-medium rounded-lg py-2 hover:bg-red-700 disabled:opacity-50 transition-colors"
+              className="flex-1 bg-blue-600 text-white text-sm font-medium rounded-lg py-2 hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
               {mutation.isPending ? "저장 중..." : "저장"}
             </button>
@@ -159,7 +159,7 @@ function AssignOrgRoleModal({
             <select
               value={orgId}
               onChange={(e) => setOrgId(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
             >
               <option value="">선택...</option>
               {(orgsData?.data ?? []).map((o) => (
@@ -172,14 +172,14 @@ function AssignOrgRoleModal({
             <select
               value={roleName}
               onChange={(e) => setRoleName(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
             >
               {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
           <div className="flex gap-2 pt-1">
-            <button type="submit" disabled={mutation.isPending} className="flex-1 bg-red-600 text-white text-sm font-medium rounded-lg py-2 hover:bg-red-700 disabled:opacity-50 transition-colors">
+            <button type="submit" disabled={mutation.isPending} className="flex-1 bg-blue-600 text-white text-sm font-medium rounded-lg py-2 hover:bg-blue-700 disabled:opacity-50 transition-colors">
               {mutation.isPending ? "처리 중..." : "부여"}
             </button>
             <button type="button" onClick={onClose} className="flex-1 border border-gray-200 text-gray-600 text-sm rounded-lg py-2 hover:bg-gray-50 transition-colors">
@@ -286,7 +286,7 @@ export function AdminUserDetailPage({ userId }: Props) {
           <h2 className="text-sm font-semibold text-gray-700">조직 역할</h2>
           <button
             onClick={() => setShowAssignOrg(true)}
-            className="text-xs text-red-600 font-medium hover:text-red-700 transition-colors"
+            className="text-xs text-blue-600 font-medium hover:text-blue-700 transition-colors"
           >
             + 조직 역할 부여
           </button>

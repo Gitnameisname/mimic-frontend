@@ -68,7 +68,7 @@ function EditDocTypeModal({
               type="text"
               value={form.display_name}
               onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
             />
           </div>
           <div>
@@ -77,7 +77,7 @@ function EditDocTypeModal({
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               rows={2}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 resize-none"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"
             />
           </div>
           {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
@@ -85,7 +85,7 @@ function EditDocTypeModal({
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="flex-1 bg-red-600 text-white text-sm font-medium rounded-lg py-2 hover:bg-red-700 disabled:opacity-50 transition-colors"
+              className="flex-1 bg-blue-600 text-white text-sm font-medium rounded-lg py-2 hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
               {mutation.isPending ? "저장 중..." : "저장"}
             </button>
@@ -193,7 +193,7 @@ function ChunkingConfigTab({ typeCode, pluginData }: { typeCode: string; pluginD
         <button
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending}
-          className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
           {mutation.isPending ? "저장 중..." : saved ? "저장됨 ✓" : "저장"}
         </button>
@@ -260,7 +260,7 @@ function RAGConfigTab({ typeCode, pluginData }: { typeCode: string; pluginData: 
       <button
         onClick={() => mutation.mutate()}
         disabled={mutation.isPending}
-        className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
       >
         {mutation.isPending ? "저장 중..." : saved ? "저장됨 ✓" : "저장"}
       </button>
@@ -331,7 +331,7 @@ function SearchConfigTab({ typeCode, pluginData }: { typeCode: string; pluginDat
           mutation.mutate();
         }}
         disabled={mutation.isPending}
-        className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
       >
         {mutation.isPending ? "저장 중..." : saved ? "저장됨 ✓" : "저장"}
       </button>
@@ -400,7 +400,7 @@ function MetadataSchemaTab({ typeCode, pluginData }: { typeCode: string; pluginD
             mutation.mutate();
           }}
           disabled={mutation.isPending}
-          className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
           {mutation.isPending ? "저장 중..." : saved ? "저장됨 ✓" : "저장"}
         </button>
@@ -607,7 +607,7 @@ export function AdminDocTypeDetailPage({ typeCode }: Props) {
               onClick={() => setActiveTab(tab.key)}
               className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === tab.key
-                  ? "border-red-500 text-red-600"
+                  ? "border-blue-500 text-blue-600"
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >

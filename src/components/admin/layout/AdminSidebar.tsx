@@ -12,6 +12,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { AdminUserPanel } from "./AdminUserPanel";
 
 // ─── 메뉴 설정 (config 기반) ───
 
@@ -238,13 +239,13 @@ export function AdminSidebar({ collapsed = false, onClose }: AdminSidebarProps) 
   return (
     <aside
       className={cn(
-        "flex flex-col bg-white border-r border-gray-200 overflow-y-auto transition-all duration-300 ease-out",
+        "flex flex-col h-full bg-white border-r border-gray-200 transition-all duration-300 ease-out",
         collapsed ? "w-16" : "w-56",
       )}
       aria-label={collapsed ? "관리자 메뉴 (축소됨)" : "관리자 메뉴"}
     >
-      {/* 그룹 헤더 + 메뉴 목록 */}
-      <nav className="flex-1 py-3 px-2 space-y-0" aria-label="관리자 네비게이션">
+      {/* 그룹 헤더 + 메뉴 목록 (nav 만 스크롤) */}
+      <nav className="flex-1 min-h-0 overflow-y-auto py-3 px-2 space-y-0" aria-label="관리자 네비게이션">
         {ADMIN_NAV_ITEMS.map((item, idx) => {
           const isActive =
             pathname === item.href ||
@@ -280,8 +281,8 @@ export function AdminSidebar({ collapsed = false, onClose }: AdminSidebarProps) 
                   "flex items-center gap-3 rounded-lg text-sm transition-all duration-200 min-h-[44px]",
                   collapsed ? "justify-center px-2.5 py-2.5" : "px-3 py-2.5",
                   active
-                    ? "bg-red-50 text-red-700 font-semibold shadow-sm"
-                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-inset",
+                    ? "bg-blue-50 text-blue-700 font-semibold shadow-sm"
+                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset",
                 )}
               >
                 <NavIcon paths={item.iconPaths} />
@@ -294,33 +295,8 @@ export function AdminSidebar({ collapsed = false, onClose }: AdminSidebarProps) 
         })}
       </nav>
 
-      {/* 하단: 일반 화면 복귀 */}
-      <div className={cn("border-t border-gray-200", collapsed ? "p-2" : "p-3")}>
-        <Link
-          href="/documents"
-          className={cn(
-            "flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 transition-all duration-200 min-h-[44px] px-3 py-2.5 rounded-lg hover:bg-gray-100 font-medium",
-            collapsed && "justify-center",
-          )}
-          title={collapsed ? "일반 화면으로 이동" : undefined}
-        >
-          <svg
-            className="w-3.5 h-3.5 shrink-0"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
-          {!collapsed && <span>일반 화면으로 이동</span>}
-        </Link>
-      </div>
+      {/* 하단: 관리자 사용자 패널 (일반 화면 복귀는 이 패널의 메뉴로 통합) */}
+      <AdminUserPanel compact={collapsed} />
     </aside>
   );
 }

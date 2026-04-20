@@ -45,8 +45,14 @@ async function request<T>(
   _retry = false,
 ): Promise<T> {
   const url = `${API_BASE}${path}`;
+
+  // FormData 업로드의 경우 브라우저가 boundary 포함한 multipart/form-data 를 자동 지정하도록
+  // Content-Type 을 기본값에서 제외한다. (application/json 하드코딩 시 멀티파트가 깨진다.)
+  const isFormData =
+    typeof FormData !== "undefined" && options.body instanceof FormData;
+
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(!isFormData ? { "Content-Type": "application/json" } : {}),
     ...(options.headers as Record<string, string>),
   };
 
@@ -136,12 +142,22 @@ export function getApiErrorMessage(err: unknown, fallback: string): string {
 export const api = {
   get: <T>(path: string, init?: RequestInit) =>
     request<T>(path, { ...init, method: "GET" }),
-  post: <T>(path: string, body?: unknown, init?: RequestInit) =>
-    request<T>(path, {
+  post: <T>(path: string, body?: unknown, init?: RequestInit) => {
+    // FormData / Blob 은 JSON.stringify 하지 않고 그대로 전달 — 업로드 시나리오
+    const isBinaryBody =
+      (typeof FormData !== "undefined" && body instanceof FormData) ||
+      (typeof Blob !== "undefined" && body instanceof Blob);
+    return request<T>(path, {
       ...init,
       method: "POST",
-      body: body != null ? JSON.stringify(body) : undefined,
-    }),
+      body:
+        body == null
+          ? undefined
+          : isBinaryBody
+            ? (body as BodyInit)
+            : JSON.stringify(body),
+    });
+  },
   patch: <T>(path: string, body?: unknown, init?: RequestInit) =>
     request<T>(path, {
       ...init,

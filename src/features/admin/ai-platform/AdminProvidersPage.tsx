@@ -87,6 +87,7 @@ const EMPTY_FORM: ProviderFormData = {
   type: "llm",
   model_name: "",
   api_base_url: "",
+  embed_endpoint: "",
   api_key: "",
   description: "",
   is_default: false,
@@ -113,6 +114,7 @@ function ProviderFormModal({
           type: initial.type,
           model_name: initial.model_name,
           api_base_url: initial.api_base_url ?? "",
+          embed_endpoint: initial.embed_endpoint ?? "",
           api_key: "",
           description: initial.description ?? "",
           is_default: initial.is_default,
@@ -157,7 +159,7 @@ function ProviderFormModal({
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
                 placeholder="예: OpenAI GPT-4o"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -169,7 +171,7 @@ function ProviderFormModal({
                 value={form.type}
                 onChange={(e) => set("type", e.target.value)}
                 disabled={isEdit}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-gray-50"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
               >
                 <option value="llm">LLM (텍스트 생성)</option>
                 <option value="embedding">Embedding (벡터화)</option>
@@ -187,7 +189,7 @@ function ProviderFormModal({
                 value={form.model_name}
                 onChange={(e) => set("model_name", e.target.value)}
                 placeholder="예: gpt-4o, claude-3-5-sonnet, llama3.2"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -202,10 +204,28 @@ function ProviderFormModal({
                 value={form.api_base_url ?? ""}
                 onChange={(e) => set("api_base_url", e.target.value)}
                 placeholder="예: https://api.openai.com/v1 (비워두면 기본값 사용)"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <p className="mt-1 text-xs text-gray-500">OpenAI 호환 API 또는 로컬 Ollama 등 커스텀 엔드포인트</p>
             </div>
+
+            {/* 임베딩 엔드포인트 (embedding 타입만) */}
+            {form.type === "embedding" && (
+              <div>
+                <label htmlFor="p-embed" className="block text-sm font-semibold text-gray-700 mb-1">
+                  임베딩 엔드포인트
+                </label>
+                <input
+                  id="p-embed"
+                  type="text"
+                  value={form.embed_endpoint ?? ""}
+                  onChange={(e) => set("embed_endpoint", e.target.value)}
+                  placeholder="예: /embed 또는 http://host:8100/embed"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="mt-1 text-xs text-gray-500">실제 임베딩 요청 경로 — 절대 URL 또는 Base URL 기준 상대 경로. 설정 시 테스트에서 실제 벡터 응답 여부를 확인합니다.</p>
+              </div>
+            )}
 
             {/* API Key */}
             <div>
@@ -219,7 +239,7 @@ function ProviderFormModal({
                   value={form.api_key ?? ""}
                   onChange={(e) => set("api_key", e.target.value)}
                   placeholder={isEdit ? "변경하지 않으려면 비워두세요" : "sk-..."}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button
                   type="button"
@@ -250,7 +270,7 @@ function ProviderFormModal({
                 value={form.description ?? ""}
                 onChange={(e) => set("description", e.target.value)}
                 placeholder="프로바이더에 대한 간단한 설명"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
             </div>
 
@@ -260,7 +280,7 @@ function ProviderFormModal({
                 type="checkbox"
                 checked={form.is_default ?? false}
                 onChange={(e) => set("is_default", e.target.checked)}
-                className="w-4 h-4 rounded accent-red-600"
+                className="w-4 h-4 rounded accent-blue-600"
               />
               <span className="text-sm font-semibold text-gray-700">이 유형의 기본 모델로 지정</span>
             </label>
@@ -282,7 +302,7 @@ function ProviderFormModal({
               <button
                 type="submit"
                 disabled={isPending}
-                className="flex-1 py-2.5 rounded-lg bg-red-700 text-white text-sm font-semibold hover:bg-red-800 transition-colors min-h-[44px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-offset-2"
+                className="flex-1 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors min-h-[44px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 {isPending ? "저장 중..." : isEdit ? "저장" : "추가"}
               </button>
@@ -397,6 +417,7 @@ export function AdminProvidersPage() {
     const body: ProviderFormData = {
       ...form,
       api_base_url: form.api_base_url?.trim() || undefined,
+      embed_endpoint: form.embed_endpoint?.trim() || undefined,
       api_key: form.api_key?.trim() || undefined,
       description: form.description?.trim() || undefined,
     };
@@ -435,7 +456,7 @@ export function AdminProvidersPage() {
         <button
           type="button"
           onClick={() => { setSaveError(""); setEditTarget("new"); }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-700 text-white text-sm font-semibold hover:bg-red-800 transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-offset-2"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -454,7 +475,7 @@ export function AdminProvidersPage() {
         <div className="flex flex-col items-center py-12 gap-3">
           <p className="text-sm text-gray-500">프로바이더 목록을 불러오지 못했습니다.</p>
           <button type="button" onClick={() => refetch()}
-            className="text-sm text-red-700 font-semibold px-4 py-2 rounded-lg hover:bg-red-50 min-h-[44px]">
+            className="text-sm text-blue-700 font-semibold px-4 py-2 rounded-lg hover:bg-blue-50 min-h-[44px]">
             다시 시도
           </button>
         </div>
@@ -463,7 +484,7 @@ export function AdminProvidersPage() {
           등록된 프로바이더가 없습니다.
           <br />
           <button type="button" onClick={() => setEditTarget("new")}
-            className="mt-3 text-red-700 font-semibold hover:underline">
+            className="mt-3 text-blue-700 font-semibold hover:underline">
             프로바이더 추가하기
           </button>
         </div>

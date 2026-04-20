@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { documentsApi } from "@/lib/api";
+import { PageContainer } from "@/components/page/PageContainer";
 import { PageHeader } from "@/components/page/PageHeader";
 import { WorkflowStatusBadge } from "@/components/badge/WorkflowStatusBadge";
 import { DocumentTypeBadge } from "@/components/badge/DocumentTypeBadge";
@@ -20,18 +21,26 @@ export function ReviewsPage() {
   const items = data?.items ?? [];
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <PageContainer>
       <PageHeader
         title="검토 대기"
-        description={!isLoading && !isError ? `${data?.total ?? 0}건` : undefined}
+        description={
+          !isLoading && !isError
+            ? `${(data?.total ?? 0).toLocaleString("ko-KR")}건의 문서가 검토를 기다리고 있습니다`
+            : undefined
+        }
       />
 
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <div className="grid grid-cols-[1fr_100px_120px_110px] gap-4 px-4 py-2.5 bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wide">
-          <span>제목</span>
-          <span>유형</span>
-          <span>요청자</span>
-          <span>요청일</span>
+      <div className="doc-list overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-soft)]">
+        <div
+          role="row"
+          className="doc-grid px-4 py-2.5 bg-[var(--color-surface-subtle)] border-b border-[var(--color-border)] text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-subtle)]"
+        >
+          <span data-col="title">제목</span>
+          <span data-col="type">유형</span>
+          <span data-col="status">상태</span>
+          <span data-col="author">요청자</span>
+          <span data-col="updated">요청일</span>
         </div>
 
         {isLoading && Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
@@ -47,30 +56,30 @@ export function ReviewsPage() {
           />
         )}
 
-        {!isLoading &&
-          !isError &&
-          items.map((doc) => (
-            <Link
-              key={doc.id}
-              href={`/documents/${doc.id}`}
-              className="grid grid-cols-[1fr_100px_120px_110px] gap-4 px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors items-center last:border-b-0"
-            >
-              <div>
-                <span className="font-medium text-sm text-gray-900 truncate block">
-                  {doc.title}
-                </span>
-                <WorkflowStatusBadge status={doc.workflow_status} className="mt-0.5" />
-              </div>
+        {!isLoading && !isError && items.map((doc) => (
+          <Link
+            key={doc.id}
+            href={`/documents/${doc.id}`}
+            className="doc-grid px-4 py-3 border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-surface-subtle)] focus-visible:bg-[var(--color-surface-subtle)] focus-visible:outline-none transition-colors"
+          >
+            <span data-col="title" className="min-w-0 truncate text-sm font-medium text-[var(--color-text)]">
+              {doc.title}
+            </span>
+            <span data-col="type" className="min-w-0">
               <DocumentTypeBadge type={doc.document_type} />
-              <span className="text-sm text-gray-500 truncate">
-                {doc.created_by_name}
-              </span>
-              <span className="text-xs text-gray-400">
-                {relativeTime(doc.updated_at)}
-              </span>
-            </Link>
-          ))}
+            </span>
+            <span data-col="status" className="min-w-0">
+              <WorkflowStatusBadge status={doc.workflow_status} />
+            </span>
+            <span data-col="author" className="min-w-0 truncate text-sm text-[var(--color-text-muted)]">
+              {doc.created_by_name || "—"}
+            </span>
+            <span data-col="updated" className="min-w-0 truncate text-xs text-[var(--color-text-subtle)]">
+              {relativeTime(doc.updated_at)}
+            </span>
+          </Link>
+        ))}
       </div>
-    </div>
+    </PageContainer>
   );
 }

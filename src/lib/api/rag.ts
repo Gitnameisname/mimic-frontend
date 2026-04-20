@@ -1,4 +1,5 @@
 import { useAuthzStore } from "@/hooks/useAuthz";
+import { getAccessToken } from "@/contexts/AuthContext";
 import type {
   RAGConversation,
   RAGMessage,
@@ -81,7 +82,10 @@ export function queryStream(
         Accept: "text/event-stream",
       };
 
-      if (IS_DEV) {
+      const at = getAccessToken();
+      if (at) {
+        headers["Authorization"] = `Bearer ${at}`;
+      } else if (IS_DEV) {
         const { role, actorId } = useAuthzStore.getState();
         if (actorId) headers["X-Actor-Id"] = actorId;
         if (role) headers["X-Actor-Role"] = role;

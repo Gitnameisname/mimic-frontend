@@ -29,6 +29,7 @@ export interface LLMProvider {
   type: ProviderType;
   model_name: string;
   api_base_url: string | null;
+  embed_endpoint: string | null;
   description: string | null;
   status: ProviderStatus;
   is_default: boolean;
@@ -287,25 +288,84 @@ export interface AgentAnomaly {
   detected_at: string;
 }
 
-// ─── FG6.3: Evaluation & Extraction (Skeleton types) ───
+// ─── FG6.3 / Phase 7: Evaluation & Extraction ───
+
+// Phase 7 FG7.1: GoldenSet / GoldenItem 은 backend 모델과 1:1 일치한다.
+// backend/app/models/golden_set.py 참조.
+
+export type GoldenSetDomain =
+  | "policy"
+  | "regulation"
+  | "technical_guide"
+  | "manual"
+  | "faq"
+  | "custom";
+
+export type GoldenSetStatus = "draft" | "published" | "archived";
+
+export interface SourceRef {
+  document_id: string;
+  version_id: string;
+  node_id: string;
+}
+
+export interface Citation5Tuple {
+  document_id: string;
+  version_id: string;
+  node_id: string;
+  span_offset: number | null;
+  content_hash: string;
+}
 
 export interface GoldenSet {
   id: string;
+  scope_id: string;
   name: string;
   description: string | null;
-  item_count: number;
-  current_version: number;
+  domain: GoldenSetDomain;
+  status: GoldenSetStatus;
+  version: number;
+  item_count: number | null;
+  extra_metadata: Record<string, unknown>;
   created_at: string;
+  created_by: string;
   updated_at: string;
+  updated_by: string | null;
+  is_deleted: boolean;
 }
 
 export interface GoldenSetItem {
   id: string;
   golden_set_id: string;
+  version: number;
   question: string;
   expected_answer: string;
-  expected_source_doc_id: string | null;
-  expected_citation: string | null;
+  expected_source_docs: SourceRef[];
+  expected_citations: Citation5Tuple[];
+  notes: string | null;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+export interface GoldenSetDetail extends GoldenSet {
+  items: GoldenSetItem[];
+}
+
+export interface GoldenSetVersionInfo {
+  version: number;
+  created_at: string;
+  created_by: string;
+  item_count: number;
+}
+
+export interface GoldenSetImportResult {
+  golden_set_id: string;
+  total_items: number;
+  successful_items: number;
+  failed_items: number;
+  errors: string[];
 }
 
 export interface EvaluationRun {

@@ -149,11 +149,11 @@ export default function ConversationItem({
 
       {/* 옵션 버튼 */}
       {!editing && (
-        <div className="shrink-0 ml-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+        <div className="shrink-0 ml-1">
           <button
             ref={menuButtonRef}
             onClick={(e) => { e.stopPropagation(); setShowMenu((v) => !v); }}
-            className="p-1 text-gray-400 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded transition-colors"
+            className="p-1 text-gray-300 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded transition-colors"
             aria-label={`${conversation.title || "대화"} 옵션 메뉴`}
             aria-expanded={showMenu}
             aria-haspopup="menu"
@@ -190,7 +190,7 @@ export default function ConversationItem({
                   setEditing(true);
                 }}
               >
-                제목 수정
+                이름 바꾸기
               </button>
             )}
             {onArchive && (
@@ -238,7 +238,7 @@ export default function ConversationItem({
                   onDelete(conversation.id);
                 }}
               >
-                삭제
+                삭제하기
               </button>
             )}
           </div>

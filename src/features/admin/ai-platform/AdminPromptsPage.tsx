@@ -53,7 +53,7 @@ function CreatePromptModal({ onClose, onCreated }: { onClose: () => void; onCrea
                 id="prompt-name"
                 type="text"
                 {...register("name")}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="예: rag_system_prompt"
                 aria-required="true"
                 aria-describedby={errors.name ? "prompt-name-err" : undefined}
@@ -70,7 +70,7 @@ function CreatePromptModal({ onClose, onCreated }: { onClose: () => void; onCrea
                 id="prompt-desc"
                 type="text"
                 {...register("description")}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="프롬프트 용도 설명"
               />
             </div>
@@ -82,7 +82,7 @@ function CreatePromptModal({ onClose, onCreated }: { onClose: () => void; onCrea
                 id="prompt-content"
                 {...register("content")}
                 rows={6}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-500 resize-y"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
                 placeholder="프롬프트 내용 입력..."
                 aria-required="true"
                 aria-describedby={errors.content ? "prompt-content-err" : undefined}
@@ -106,7 +106,7 @@ function CreatePromptModal({ onClose, onCreated }: { onClose: () => void; onCrea
             <button
               type="submit"
               disabled={isSubmitting || mut.isPending}
-              className="flex-1 py-2.5 rounded-lg bg-red-700 text-white text-sm font-semibold hover:bg-red-800 transition-colors min-h-[44px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-offset-2"
+              className="flex-1 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors min-h-[44px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               {mut.isPending ? "저장 중..." : "생성"}
             </button>
@@ -139,7 +139,7 @@ function VersionTimeline({
             className={cn(
               "absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 flex items-center justify-center",
               v.is_active || v.id === activeVersionId
-                ? "bg-red-700 border-red-700"
+                ? "bg-blue-600 border-blue-600"
                 : "bg-white border-gray-300"
             )}
             aria-hidden="true"
@@ -149,7 +149,7 @@ function VersionTimeline({
               <p className="text-sm font-semibold text-gray-900">
                 v{v.version_number}
                 {(v.is_active || v.id === activeVersionId) && (
-                  <span className="ml-2 text-xs font-semibold text-red-700 bg-red-50 px-1.5 py-0.5 rounded">
+                  <span className="ml-2 text-xs font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
                     활성
                   </span>
                 )}
@@ -167,7 +167,7 @@ function VersionTimeline({
                 type="button"
                 disabled={activating}
                 onClick={() => onActivate(v.id)}
-                className="shrink-0 px-3 py-1.5 rounded-lg border border-red-300 text-red-700 text-xs font-semibold hover:bg-red-50 transition-colors min-h-[36px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="shrink-0 px-3 py-1.5 rounded-lg border border-blue-300 text-blue-700 text-xs font-semibold hover:bg-blue-50 transition-colors min-h-[36px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 이 버전 활성화
               </button>
@@ -246,7 +246,7 @@ function PromptDetailPanel({
             <button
               type="button"
               onClick={() => setAddingVersion(true)}
-              className="text-xs font-semibold text-red-700 hover:text-red-800 px-3 py-1.5 rounded-lg hover:bg-red-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="text-xs font-semibold text-blue-700 hover:text-blue-800 px-3 py-1.5 rounded-lg hover:bg-blue-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               + 새 버전 추가
             </button>
@@ -262,7 +262,7 @@ function PromptDetailPanel({
                 value={newContent}
                 onChange={(e) => setNewContent(e.target.value)}
                 rows={5}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-red-500 resize-y"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
                 placeholder="새 버전의 프롬프트 내용..."
               />
               <div className="flex gap-2">
@@ -277,7 +277,7 @@ function PromptDetailPanel({
                   type="button"
                   disabled={!newContent.trim() || newVersionMut.isPending}
                   onClick={() => newVersionMut.mutate(newContent)}
-                  className="flex-1 py-2 rounded-lg bg-red-700 text-white text-xs font-semibold hover:bg-red-800 min-h-[36px] disabled:opacity-50"
+                  className="flex-1 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 min-h-[36px] disabled:opacity-50"
                 >
                   {newVersionMut.isPending ? "저장 중..." : "저장"}
                 </button>
@@ -342,7 +342,7 @@ export function AdminPromptsPage() {
         <button
           type="button"
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-700 text-white text-sm font-semibold hover:bg-red-800 transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-offset-2"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -360,7 +360,7 @@ export function AdminPromptsPage() {
       ) : isError ? (
         <div className="flex flex-col items-center py-12 gap-3">
           <p className="text-sm text-gray-500">프롬프트 목록을 불러오지 못했습니다.</p>
-          <button type="button" onClick={() => refetch()} className="text-sm text-red-700 font-semibold px-4 py-2 rounded-lg hover:bg-red-50 min-h-[44px]">
+          <button type="button" onClick={() => refetch()} className="text-sm text-blue-700 font-semibold px-4 py-2 rounded-lg hover:bg-blue-50 min-h-[44px]">
             다시 시도
           </button>
         </div>
@@ -383,7 +383,20 @@ export function AdminPromptsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {prompts.map((p) => (
-                    <tr key={p.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => setSelected(p)}>
+                    <tr
+                      key={p.id}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${p.name} 프롬프트 상세 열기`}
+                      className="hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus-visible:bg-blue-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+                      onClick={() => setSelected(p)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setSelected(p);
+                        }
+                      }}
+                    >
                       <td className="px-4 py-3 font-semibold text-gray-900">{p.name}</td>
                       <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{p.description ?? "-"}</td>
                       <td className="px-4 py-3 text-gray-700">
@@ -405,7 +418,7 @@ export function AdminPromptsPage() {
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setSelected(p); }}
-                          className="text-xs font-semibold text-red-700 hover:text-red-800 px-3 py-1.5 rounded-lg hover:bg-red-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-red-500"
+                          className="text-xs font-semibold text-blue-700 hover:text-blue-800 px-3 py-1.5 rounded-lg hover:bg-blue-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           상세 보기
                         </button>

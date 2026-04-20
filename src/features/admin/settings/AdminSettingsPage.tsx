@@ -71,8 +71,8 @@ function ToggleInput({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200
-        focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:outline-none
-        ${checked ? "bg-red-600" : "bg-gray-300"}
+        focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:outline-none
+        ${checked ? "bg-blue-600" : "bg-gray-300"}
         ${disabled ? "opacity-50 cursor-not-allowed" : "active:scale-95"}`}
     >
       <span
@@ -136,7 +136,7 @@ function SettingRow({
         aria-invalid={isInvalid}
         aria-describedby={isInvalid ? `${fieldId}-err` : undefined}
         className={`w-32 px-3 py-1.5 text-sm font-mono border rounded-lg
-          focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none
+          focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none
           disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed
           ${isInvalid ? "border-red-400 bg-red-50" : "border-gray-300"}`}
       />
@@ -152,7 +152,7 @@ function SettingRow({
         aria-invalid={isInvalid}
         aria-describedby={isInvalid ? `${fieldId}-err` : undefined}
         className={`w-full max-w-xs px-3 py-1.5 text-sm border rounded-lg
-          focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none
+          focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none
           disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed
           ${isInvalid ? "border-red-400 bg-red-50" : "border-gray-300"}`}
       />
@@ -256,7 +256,7 @@ function ConfirmModal({ changes, onClose, onConfirm, isPending }: ConfirmModalPr
                     {String(c.item.value)}
                   </span>
                   <span className="text-gray-400">→</span>
-                  <span className="text-red-700 font-mono font-semibold">
+                  <span className="text-blue-700 font-mono font-semibold">
                     {String(c.newValue)}
                   </span>
                 </div>
@@ -373,7 +373,7 @@ export function AdminSettingsPage() {
           <p className="text-sm text-red-700 font-medium">설정을 불러오지 못했습니다.</p>
           <button
             onClick={() => refetch()}
-            className="mt-3 px-4 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="mt-3 px-4 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             다시 시도
           </button>
@@ -416,7 +416,7 @@ export function AdminSettingsPage() {
             disabled={dirtyCount === 0 || saveMutation.isPending}
             className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg
               hover:bg-gray-50 transition-colors min-h-[40px]
-              focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none
+              focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none
               disabled:opacity-50 disabled:cursor-not-allowed"
           >
             되돌리기
@@ -425,9 +425,9 @@ export function AdminSettingsPage() {
             type="button"
             onClick={() => setShowConfirm(true)}
             disabled={!canEdit || dirtyCount === 0 || saveMutation.isPending}
-            className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-lg
-              hover:bg-red-700 transition-colors min-h-[40px]
-              focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:outline-none
+            className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg
+              hover:bg-blue-700 transition-colors min-h-[40px]
+              focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:outline-none
               disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
           >
             저장
@@ -466,9 +466,9 @@ export function AdminSettingsPage() {
                   id={`tab-${cat.name}`}
                   onClick={() => setActiveTab(cat.name)}
                   className={`relative px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap
-                    focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none rounded-t-md
+                    focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none rounded-t-md
                     ${active
-                      ? "text-red-600 border-b-2 border-red-600 -mb-px"
+                      ? "text-blue-600 border-b-2 border-blue-600 -mb-px"
                       : "text-gray-500 hover:text-gray-900"}`}
                 >
                   {cat.label}

@@ -233,7 +233,7 @@ export function AdminMonitoringPage() {
             value={refreshInterval}
             onChange={(e) => setRefreshInterval(Number(e.target.value))}
             className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white min-h-[40px]
-              focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+              focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
           >
             {REFRESH_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -246,7 +246,7 @@ export function AdminMonitoringPage() {
             onClick={refetchAll}
             className="px-3 py-2 text-sm font-medium bg-white border border-gray-300 rounded-lg
               hover:bg-gray-50 transition-colors min-h-[40px]
-              focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none active:scale-[0.98]"
+              focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none active:scale-[0.98]"
             aria-label="모든 데이터 새로고침"
           >
             새로고침
@@ -318,9 +318,9 @@ export function AdminMonitoringPage() {
                 onClick={() => setPeriod(o.value)}
                 aria-pressed={period === o.value}
                 className={`px-3 py-1 text-xs font-medium rounded transition-colors min-h-[32px]
-                  focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none
+                  focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none
                   ${period === o.value
-                    ? "bg-white text-red-600 shadow-sm"
+                    ? "bg-white text-blue-600 shadow-sm"
                     : "text-gray-600 hover:text-gray-900"}`}
               >
                 {o.label}

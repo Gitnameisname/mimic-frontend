@@ -179,7 +179,20 @@ export function AdminExtractionSchemasPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {schemas.map((s) => (
-                <tr key={s.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => setSelected(s)}>
+                <tr
+                  key={s.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${s.document_type_code} 스키마 편집`}
+                  className="hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus-visible:bg-blue-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+                  onClick={() => setSelected(s)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelected(s);
+                    }
+                  }}
+                >
                   <td className="px-4 py-3 font-semibold text-gray-900 font-mono">{s.document_type_code}</td>
                   <td className="px-4 py-3 text-gray-700">{s.fields_count}개</td>
                   <td className="px-4 py-3">
@@ -194,7 +207,7 @@ export function AdminExtractionSchemasPage() {
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setSelected(s); }}
-                      className="text-xs font-semibold text-red-700 hover:text-red-800 px-3 py-1.5 rounded-lg hover:bg-red-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="text-xs font-semibold text-blue-700 hover:text-blue-800 px-3 py-1.5 rounded-lg hover:bg-blue-50 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       스키마 편집
                     </button>

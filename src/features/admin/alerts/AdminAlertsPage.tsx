@@ -92,9 +92,9 @@ export function AdminAlertsPage() {
             type="button"
             onClick={() => setTab(v)}
             className={`px-4 py-1.5 text-sm font-medium rounded min-h-[36px]
-              focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none
+              focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none
               ${tab === v
-                ? "bg-white text-red-600 shadow-sm"
+                ? "bg-white text-blue-600 shadow-sm"
                 : "text-gray-600 hover:text-gray-900"}`}
           >
             {v === "rules" ? "규칙" : "이력"}
@@ -166,7 +166,7 @@ function RulesTab({ canEdit }: { canEdit: boolean }) {
             disabled={evaluateMutation.isPending}
             className="px-3 py-2 text-sm font-medium bg-white border border-gray-300 rounded-lg
               hover:bg-gray-50 transition-colors min-h-[36px] disabled:opacity-50
-              focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+              focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
           >
             즉시 평가
           </button>
@@ -174,9 +174,9 @@ function RulesTab({ canEdit }: { canEdit: boolean }) {
             <button
               type="button"
               onClick={() => setIsNewOpen(true)}
-              className="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg
-                hover:bg-red-700 transition-colors min-h-[36px]
-                focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+              className="px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg
+                hover:bg-blue-700 transition-colors min-h-[36px]
+                focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
             >
               + 규칙 추가
             </button>
@@ -231,8 +231,8 @@ function RulesTab({ canEdit }: { canEdit: boolean }) {
                         disabled={!canEdit || toggleMutation.isPending}
                         onClick={() => toggleMutation.mutate({ id: r.id, enabled: !r.enabled })}
                         className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors
-                          focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none
-                          disabled:opacity-50 ${r.enabled ? "bg-red-500" : "bg-gray-300"}`}
+                          focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none
+                          disabled:opacity-50 ${r.enabled ? "bg-blue-600" : "bg-gray-300"}`}
                       >
                         <span
                           aria-hidden="true"
@@ -248,7 +248,7 @@ function RulesTab({ canEdit }: { canEdit: boolean }) {
                             type="button"
                             onClick={() => setEditing(r)}
                             className="px-2 py-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded
-                              focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+                              focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                           >
                             편집
                           </button>
@@ -256,7 +256,7 @@ function RulesTab({ canEdit }: { canEdit: boolean }) {
                             type="button"
                             onClick={() => setConfirmDelete(r)}
                             className="px-2 py-1 text-xs text-red-700 hover:bg-red-50 rounded
-                              focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+                              focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                           >
                             삭제
                           </button>
@@ -426,7 +426,7 @@ function RuleEditorModal({ metrics, rule, onClose, onSaved }: RuleEditorProps) {
             maxLength={255}
             required
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg
-              focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+              focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
           />
         </Field>
 
@@ -437,7 +437,7 @@ function RuleEditorModal({ metrics, rule, onClose, onSaved }: RuleEditorProps) {
             maxLength={2000}
             rows={2}
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg
-              focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+              focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
           />
         </Field>
 
@@ -447,7 +447,7 @@ function RuleEditorModal({ metrics, rule, onClose, onSaved }: RuleEditorProps) {
               value={metricName}
               onChange={(e) => setMetricName(e.target.value)}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white
-                focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+                focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
             >
               {metrics.map((m) => (
                 <option key={m.name} value={m.name}>{m.label}</option>
@@ -459,7 +459,7 @@ function RuleEditorModal({ metrics, rule, onClose, onSaved }: RuleEditorProps) {
               value={severity}
               onChange={(e) => setSeverity(e.target.value as AlertSeverity)}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white
-                focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+                focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
             >
               {SEVERITY_OPTIONS.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
@@ -474,7 +474,7 @@ function RuleEditorModal({ metrics, rule, onClose, onSaved }: RuleEditorProps) {
               value={operator}
               onChange={(e) => setOperator(e.target.value as AlertOperator)}
               className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white
-                focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+                focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
             >
               {(Object.keys(OPERATOR_LABELS) as AlertOperator[]).map((op) => (
                 <option key={op} value={op}>{op} ({OPERATOR_LABELS[op]})</option>
@@ -489,7 +489,7 @@ function RuleEditorModal({ metrics, rule, onClose, onSaved }: RuleEditorProps) {
               onChange={(e) => setThreshold(e.target.value)}
               required
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg font-mono
-                focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+                focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
             />
           </Field>
         </div>
@@ -503,7 +503,7 @@ function RuleEditorModal({ metrics, rule, onClose, onSaved }: RuleEditorProps) {
                   type="checkbox"
                   checked={channels.includes(ch)}
                   onChange={() => toggleChannel(ch)}
-                  className="w-4 h-4 text-red-600 rounded border-gray-300 focus-visible:ring-2 focus-visible:ring-red-500"
+                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus-visible:ring-2 focus-visible:ring-blue-500"
                 />
                 {ch === "email" ? "이메일" : "웹훅"}
               </label>
@@ -517,7 +517,7 @@ function RuleEditorModal({ metrics, rule, onClose, onSaved }: RuleEditorProps) {
                 onChange={(e) => setEmailRecipients(e.target.value)}
                 placeholder="admin@example.com, oncall@example.com"
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg
-                  focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+                  focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
               />
             </Field>
           )}
@@ -529,7 +529,7 @@ function RuleEditorModal({ metrics, rule, onClose, onSaved }: RuleEditorProps) {
                 onChange={(e) => setWebhookUrl(e.target.value)}
                 placeholder="https://hooks.example.com/alerts"
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg font-mono
-                  focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+                  focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
               />
               <p className="mt-1 text-xs text-gray-400">
                 내부/루프백 주소는 차단됩니다 (SSRF 방어).
@@ -543,7 +543,7 @@ function RuleEditorModal({ metrics, rule, onClose, onSaved }: RuleEditorProps) {
             type="checkbox"
             checked={enabled}
             onChange={(e) => setEnabled(e.target.checked)}
-            className="w-4 h-4 text-red-600 rounded border-gray-300 focus-visible:ring-2 focus-visible:ring-red-500"
+            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus-visible:ring-2 focus-visible:ring-blue-500"
           />
           활성화
         </label>
@@ -626,7 +626,7 @@ function HistoryTab({ canEdit }: { canEdit: boolean }) {
             value={status}
             onChange={(e) => setStatus(e.target.value as "" | AlertStatus)}
             className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white min-h-[36px]
-              focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+              focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
           >
             {STATUS_OPTIONS.map((o) => (
               <option key={o.value || "all"} value={o.value}>상태: {o.label}</option>
@@ -638,7 +638,7 @@ function HistoryTab({ canEdit }: { canEdit: boolean }) {
             value={severity}
             onChange={(e) => setSeverity(e.target.value as "" | AlertSeverity)}
             className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white min-h-[36px]
-              focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+              focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
           >
             <option value="">심각도: 전체</option>
             {SEVERITY_OPTIONS.map((s) => (
@@ -714,7 +714,7 @@ function HistoryTab({ canEdit }: { canEdit: boolean }) {
                           onClick={() => ackMutation.mutate(it.id)}
                           disabled={ackMutation.isPending}
                           className="px-2 py-1 text-xs text-red-700 bg-red-50 hover:bg-red-100 rounded
-                            focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none
+                            focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none
                             disabled:opacity-50"
                         >
                           확인

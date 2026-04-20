@@ -145,7 +145,7 @@ export function AdminDocTypesPage() {
         <h1 className="text-xl font-semibold text-gray-900">문서 유형 관리</h1>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -162,7 +162,7 @@ export function AdminDocTypesPage() {
             onClick={() => setStatusFilter(s)}
             className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
               statusFilter === s
-                ? "bg-red-600 text-white"
+                ? "bg-blue-600 text-white"
                 : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
             }`}
           >

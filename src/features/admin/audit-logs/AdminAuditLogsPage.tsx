@@ -158,12 +158,14 @@ export function AdminAuditLogsPage() {
     staleTime: 30_000,
   });
 
+  const PAGE_SIZE = 20;
+
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "audit-logs", page, from, to, eventType, actorId, result],
     queryFn: () =>
       adminApi.getAuditLogs({
         page,
-        page_size: 50,
+        page_size: PAGE_SIZE,
         from: from || undefined,
         to: to || undefined,
         event_type: eventType || undefined,
@@ -231,7 +233,7 @@ export function AdminAuditLogsPage() {
               <select
                 value={preset}
                 onChange={(e) => { setPreset(e.target.value as PresetKey); setPage(1); }}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
               >
                 {PRESETS.map((p) => (
                   <option key={p.key} value={p.key}>{p.label}</option>
@@ -246,7 +248,7 @@ export function AdminAuditLogsPage() {
                     type="datetime-local"
                     value={customFrom}
                     onChange={(e) => { setCustomFrom(e.target.value); setPage(1); }}
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
                   />
                 </label>
                 <label className="text-xs text-gray-500">
@@ -255,7 +257,7 @@ export function AdminAuditLogsPage() {
                     type="datetime-local"
                     value={customTo}
                     onChange={(e) => { setCustomTo(e.target.value); setPage(1); }}
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
                   />
                 </label>
               </>
@@ -265,7 +267,7 @@ export function AdminAuditLogsPage() {
               <select
                 value={eventType}
                 onChange={(e) => { setEventType(e.target.value); setPage(1); }}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 w-48"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 w-48"
               >
                 <option value="">전체</option>
                 {(eventTypesQuery.data?.data.items ?? []).map((opt) => (
@@ -282,7 +284,7 @@ export function AdminAuditLogsPage() {
                 placeholder="이름/이메일 검색"
                 aria-label="사용자 검색"
                 autoComplete="off"
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 w-48"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 w-48"
               />
               {actorSearch && usersQuery.data?.data && usersQuery.data.data.length > 0 && !actorId && (
                 <ul
@@ -311,7 +313,7 @@ export function AdminAuditLogsPage() {
               <select
                 value={result}
                 onChange={(e) => { setResult(e.target.value); setPage(1); }}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
               >
                 <option value="">전체</option>
                 <option value="success">성공</option>
@@ -326,7 +328,7 @@ export function AdminAuditLogsPage() {
                   setEventType(""); setActorId(""); setActorSearch("");
                   setResult(""); setPage(1);
                 }}
-                className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 rounded"
+                className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 rounded"
               >
                 초기화
               </button>
@@ -349,7 +351,7 @@ export function AdminAuditLogsPage() {
           />
           <Pagination
             page={page}
-            pageSize={50}
+            pageSize={PAGE_SIZE}
             total={data?.total ?? 0}
             onPageChange={setPage}
           />

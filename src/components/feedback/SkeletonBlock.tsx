@@ -12,8 +12,8 @@ export function SkeletonBlock({ className, rows = 1 }: Props) {
         <div
           key={i}
           className={cn(
-            "h-4 bg-gray-200 rounded",
-            i === rows - 1 && rows > 1 ? "w-3/4" : "w-full"
+            "h-4 rounded bg-[var(--color-surface-subtle)]",
+            i === rows - 1 && rows > 1 ? "w-3/4" : "w-full",
           )}
         />
       ))}
@@ -23,14 +23,15 @@ export function SkeletonBlock({ className, rows = 1 }: Props) {
 
 export function SkeletonRow() {
   return (
-    <div className="animate-pulse flex items-center gap-4 p-4 border-b border-gray-100">
-      <div className="flex-1 space-y-2">
-        <div className="h-4 bg-gray-200 rounded w-3/4" />
-        <div className="h-3 bg-gray-100 rounded w-1/2" />
-      </div>
-      <div className="h-5 w-16 bg-gray-200 rounded-full" />
-      <div className="h-5 w-16 bg-gray-100 rounded-full" />
-      <div className="h-3 w-20 bg-gray-100 rounded" />
+    <div
+      aria-hidden="true"
+      className="doc-grid animate-pulse border-b border-[var(--color-border)] px-4 py-3 last:border-b-0"
+    >
+      <div data-col="title" className="h-4 w-3/4 rounded bg-[var(--color-surface-subtle)]" />
+      <div data-col="type" className="h-5 w-16 rounded-full bg-[var(--color-surface-subtle)]" />
+      <div data-col="status" className="h-5 w-16 rounded-full bg-[var(--color-surface-subtle)]" />
+      <div data-col="author" className="h-3 w-20 rounded bg-[var(--color-surface-subtle)]" />
+      <div data-col="updated" className="h-3 w-14 rounded bg-[var(--color-surface-subtle)]" />
     </div>
   );
 }
