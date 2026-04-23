@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { goldenSetsApi, type GoldenItemCreateFormData } from "@/lib/api/s2admin";
-import { getApiErrorMessage } from "@/lib/api/client";
+import {
+  ApiError,
+  API_BASE,
+  NetworkError,
+  getApiErrorMessage,
+} from "@/lib/api/client";
 import type {
   GoldenSet,
   GoldenSetDetail,
@@ -60,6 +65,192 @@ function downloadJsonFile(data: unknown, filename: string) {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+// ─── 에러 분류 (#31) ───
+//
+// 목록 에러 배너는 이전에 *모든* 실패에 "S2 ⑥" 안내를 붙여 사용자가 서버 장애·
+// 네트워크 실패·레이트 리밋 등을 전부 권한 문제로 오해하게 만들었다. 여기서는
+// HTTP 상태 코드 / 에러 객체 형태로 카테고리를 나눠 배너 제목·본문·힌트·재시도
+// 노출을 분기한다. S2 ⑥ 안내는 *정말 ACL 이 거부된 경우(403)* 에만 표기한다.
+//
+// 분류 정책:
+//   - 401:   세션 만료 안내 (client.ts 가 자동 리다이렉트 시도 중일 수 있음)
+//   - 403:   S2 ⑥ Scope Profile / 권한 힌트 — 여기만 S2 ⑥ 언급
+//   - 404:   엔드포인트 미발견 (배포/라우팅 문제)
+//   - 429:   레이트 리밋 (잠시 후 재시도 힌트)
+//   - 5xx:   서버 일시 장애 — 재시도 버튼 노출
+//   - 기타 4xx: 백엔드 메시지 표시 + 재시도 가능
+//   - 네트워크 오류(TypeError: Failed to fetch 등): 연결 점검 안내 + 재시도
+//   - 그 외:  fallback 메시지 + 재시도
+//
+// 재시도 가능 여부(canRetry)는 일시적 문제일 때만 true — 401/403/404 는 재시도로
+// 해결되지 않으므로 버튼을 숨긴다 (사용자 혼란 감소).
+
+interface ListErrorInfo {
+  title: string;
+  body: string;
+  hint?: string;
+  canRetry: boolean;
+}
+
+function classifyListError(err: unknown): ListErrorInfo {
+  const fallback = "골든셋 목록을 불러오지 못했습니다.";
+
+  if (err instanceof ApiError) {
+    if (err.status === 401) {
+      return {
+        title: "세션이 만료되었습니다",
+        body: "다시 로그인한 뒤 이 화면으로 돌아와 주세요.",
+        canRetry: false,
+      };
+    }
+    if (err.status === 403) {
+      return {
+        title: "이 목록을 볼 권한이 없습니다",
+        body: getApiErrorMessage(err, fallback),
+        hint: "Scope Profile 바인딩 또는 역할을 확인해 주세요. (S2 ⑥)",
+        canRetry: false,
+      };
+    }
+    if (err.status === 404) {
+      return {
+        title: "목록 엔드포인트를 찾을 수 없습니다",
+        body: getApiErrorMessage(err, fallback),
+        hint: "배포 버전 또는 API 경로 설정을 확인해 주세요.",
+        canRetry: false,
+      };
+    }
+    if (err.status === 429) {
+      return {
+        title: "요청이 너무 잦습니다",
+        body: "잠시 후 다시 시도해 주세요.",
+        canRetry: true,
+      };
+    }
+    if (err.status >= 500) {
+      return {
+        title: "서버에서 일시적 오류가 발생했습니다",
+        body: getApiErrorMessage(err, fallback),
+        hint: "잠시 후 다시 시도해 주세요. 문제가 지속되면 관리자에게 문의해 주세요.",
+        canRetry: true,
+      };
+    }
+    // 그 외 4xx
+    return {
+      title: "목록을 불러오지 못했습니다",
+      body: getApiErrorMessage(err, fallback),
+      canRetry: true,
+    };
+  }
+
+  // 네트워크 실패 — client.ts 에서 NetworkError 로 래핑됨. 관리자 해결을 위해
+  // 요청 URL 과 원본 오류 메시지를 그대로 노출한다 (#서버연결실패 진단 강화).
+  if (err instanceof NetworkError) {
+    return {
+      title: "서버에 연결하지 못했습니다",
+      body: `${err.method} ${err.url} — ${err.originalMessage}`,
+      hint: `백엔드 서버 기동(${API_BASE}) · CORS · Mixed content · 방화벽을 차례로 확인해 주세요.`,
+      canRetry: true,
+    };
+  }
+  // 레거시 경로 (NetworkError 래핑 전)
+  if (err instanceof TypeError) {
+    return {
+      title: "서버에 연결하지 못했습니다",
+      body: err.message || "네트워크 상태 또는 서버 가용성을 확인해 주세요.",
+      hint: `API 베이스: ${API_BASE}`,
+      canRetry: true,
+    };
+  }
+
+  return {
+    title: "목록을 불러오지 못했습니다",
+    body: fallback,
+    canRetry: true,
+  };
+}
+
+// ─── 삭제 에러 분류 (#33) ───
+//
+// 골든셋 삭제는 destructive action 이므로 에러 메시지가 더 구체적이어야 한다.
+// 특히 404 는 "이미 삭제되었거나 존재하지 않음" 으로 해석해 사용자 혼란을 줄이고,
+// 403 은 여기서만 S2 ⑥ (Scope Profile) 안내를 붙인다. #31 의 classifyListError 와
+// 분기 규칙을 공유하지만, 제목/본문은 삭제 행동에 맞게 조정한다.
+interface DeleteErrorInfo {
+  title: string;
+  body: string;
+  hint?: string;
+  canRetry: boolean;
+}
+
+function classifyDeleteError(err: unknown): DeleteErrorInfo {
+  const fallback = "삭제에 실패했습니다.";
+  if (err instanceof ApiError) {
+    if (err.status === 401) {
+      return {
+        title: "세션이 만료되었습니다",
+        body: "다시 로그인한 뒤 삭제를 재시도해 주세요.",
+        canRetry: false,
+      };
+    }
+    if (err.status === 403) {
+      return {
+        title: "삭제 권한이 없습니다",
+        body: getApiErrorMessage(err, fallback),
+        hint: "Scope Profile 바인딩 또는 역할을 확인해 주세요. (S2 ⑥)",
+        canRetry: false,
+      };
+    }
+    if (err.status === 404) {
+      return {
+        title: "이미 삭제되었거나 존재하지 않습니다",
+        body: "목록을 새로고침하면 반영되어 있을 수 있습니다.",
+        canRetry: false,
+      };
+    }
+    if (err.status === 429) {
+      return {
+        title: "요청이 너무 잦습니다",
+        body: "잠시 후 다시 시도해 주세요.",
+        canRetry: true,
+      };
+    }
+    if (err.status >= 500) {
+      return {
+        title: "서버에서 일시적 오류가 발생했습니다",
+        body: getApiErrorMessage(err, fallback),
+        hint: "잠시 후 다시 시도해 주세요.",
+        canRetry: true,
+      };
+    }
+    return {
+      title: "삭제에 실패했습니다",
+      body: getApiErrorMessage(err, fallback),
+      canRetry: true,
+    };
+  }
+  if (err instanceof NetworkError) {
+    return {
+      title: "서버에 연결하지 못했습니다",
+      body: `${err.method} ${err.url} — ${err.originalMessage}`,
+      hint: `백엔드 서버 기동(${API_BASE}) · CORS · Mixed content · 방화벽을 차례로 확인해 주세요.`,
+      canRetry: true,
+    };
+  }
+  if (err instanceof TypeError) {
+    return {
+      title: "서버에 연결하지 못했습니다",
+      body: err.message || "네트워크 상태 또는 서버 가용성을 확인해 주세요.",
+      hint: `API 베이스: ${API_BASE}`,
+      canRetry: true,
+    };
+  }
+  return {
+    title: "삭제에 실패했습니다",
+    body: fallback,
+    canRetry: true,
+  };
 }
 
 // ─── Create Modal ───
@@ -348,6 +539,139 @@ function GoldenItemAddForm({ goldenSetId, onAdded, onCancel }: ItemAddFormProps)
   );
 }
 
+// ─── Delete Confirm Modal (#33) ───
+//
+// destructive action 가드 — GitHub / GitLab "type-to-confirm" 패턴. 이름을 정확히
+// 다시 입력해야 "영구 삭제(soft delete)" 버튼이 활성화된다. 머슬 메모리 삭제 방지.
+//
+// 접근성:
+//   - role="dialog" + aria-modal="true" + aria-labelledby
+//   - 진입 시 확인 입력란에 자동 포커스, Esc 로 닫기 (단 pending 중에는 닫기 금지)
+//   - 44px 최소 터치 타겟, focus-visible ring
+//
+// 에러 처리: classifyDeleteError 로 분기 (#31 의 classifyListError 와 대칭 구조)
+
+interface DeleteConfirmModalProps {
+  goldenSetName: string;
+  isPending: boolean;
+  errorInfo: DeleteErrorInfo | null;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+function GoldenSetDeleteConfirmModal({
+  goldenSetName,
+  isPending,
+  errorInfo,
+  onConfirm,
+  onCancel,
+}: DeleteConfirmModalProps) {
+  const [typed, setTyped] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const canConfirm = typed.trim() === goldenSetName.trim() && !isPending;
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="golden-set-delete-title"
+      aria-describedby="golden-set-delete-desc"
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && !isPending) onCancel();
+      }}
+    >
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-red-200">
+        <div className="px-5 py-4 border-b border-red-200 bg-red-50 flex items-center gap-3">
+          <svg
+            className="w-6 h-6 text-red-600 flex-shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+          <h2 id="golden-set-delete-title" className="text-base font-bold text-red-900">
+            골든셋 삭제 확인
+          </h2>
+        </div>
+        <div className="p-5 space-y-4">
+          <p id="golden-set-delete-desc" className="text-sm text-gray-700 leading-6">
+            아래 골든셋을 <strong className="text-red-700">삭제</strong>하시겠습니까? 모든
+            질문-답변 항목도 함께 삭제 처리됩니다. 삭제는 soft delete 로 기록되며 관리자 DB
+            에서 복구 가능합니다.
+          </p>
+          <div className="rounded-lg bg-gray-50 border border-gray-200 px-3 py-2">
+            <p className="text-xs text-gray-500">대상 골든셋</p>
+            <p className="text-sm font-semibold text-gray-900 break-all">{goldenSetName}</p>
+          </div>
+          <div>
+            <label htmlFor="delete-confirm-input" className="block text-xs font-semibold text-gray-700 mb-1">
+              확인을 위해 위 이름을 정확히 다시 입력해 주세요
+            </label>
+            <input
+              ref={inputRef}
+              id="delete-confirm-input"
+              type="text"
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              disabled={isPending}
+              autoComplete="off"
+              spellCheck={false}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:border-red-500 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+              placeholder={goldenSetName}
+              aria-describedby="delete-confirm-help"
+            />
+            <p id="delete-confirm-help" className="text-[11px] text-gray-500 mt-1">
+              일치하지 않으면 삭제 버튼이 활성화되지 않습니다.
+            </p>
+          </div>
+
+          {errorInfo && (
+            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2" role="alert">
+              <p className="text-sm font-bold text-red-800">{errorInfo.title}</p>
+              <p className="text-xs text-red-700 mt-1">{errorInfo.body}</p>
+              {errorInfo.hint && (
+                <p className="text-[11px] text-red-600 mt-1">{errorInfo.hint}</p>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={isPending}
+              className="flex-1 py-2.5 min-h-[44px] rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={!canConfirm}
+              className="flex-1 py-2.5 min-h-[44px] rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:bg-red-300 disabled:cursor-not-allowed"
+            >
+              {isPending ? "삭제 중..." : "영구 삭제"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Detail Panel ───
 
 interface DetailPanelProps {
@@ -359,6 +683,8 @@ function GoldenSetDetailPanel({ goldenSetId, onClose }: DetailPanelProps) {
   const queryClient = useQueryClient();
   const [addingItem, setAddingItem] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteErrorInfo, setDeleteErrorInfo] = useState<DeleteErrorInfo | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const detailQuery = useQuery({
@@ -399,6 +725,20 @@ function GoldenSetDetailPanel({ goldenSetId, onClose }: DetailPanelProps) {
       const detail = detailQuery.data?.data;
       const filename = `golden-set-${detail?.name ?? goldenSetId}.json`;
       downloadJsonFile(payload, filename.replace(/\s+/g, "_"));
+    },
+  });
+
+  // #33: 골든셋 soft delete. 성공 시 모달/패널을 모두 닫고 목록을 invalidate.
+  const deleteMutation = useMutation({
+    mutationFn: () => goldenSetsApi.delete(goldenSetId),
+    onSuccess: () => {
+      setDeleteErrorInfo(null);
+      setShowDeleteConfirm(false);
+      queryClient.invalidateQueries({ queryKey: ["admin", "golden-sets"] });
+      onClose();
+    },
+    onError: (err) => {
+      setDeleteErrorInfo(classifyDeleteError(err));
     },
   });
 
@@ -586,10 +926,51 @@ function GoldenSetDetailPanel({ goldenSetId, onClose }: DetailPanelProps) {
                   </p>
                 )}
               </div>
+
+              {/* 위험 구역 — 골든셋 soft delete (#33) */}
+              <div
+                className="rounded-xl border border-red-200 bg-red-50/40 p-4"
+                aria-labelledby="danger-zone-title"
+              >
+                <h3 id="danger-zone-title" className="text-sm font-bold text-red-800 mb-1">
+                  위험 구역
+                </h3>
+                <p className="text-xs text-red-700 mb-3 leading-5">
+                  이 골든셋과 모든 질문-답변 항목이 삭제 처리됩니다. soft delete 로
+                  기록되므로 관리자 DB 에서 복구할 수 있지만, UI 에서는 즉시 사라집니다.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteErrorInfo(null);
+                    setShowDeleteConfirm(true);
+                  }}
+                  disabled={deleteMutation.isPending}
+                  className="px-4 py-2 min-h-[44px] rounded-lg border border-red-300 bg-white text-sm font-semibold text-red-700 hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  aria-label={`${detail.name} 골든셋 삭제`}
+                >
+                  골든셋 삭제…
+                </button>
+              </div>
             </>
           )}
         </div>
       </div>
+
+      {showDeleteConfirm && detail && (
+        <GoldenSetDeleteConfirmModal
+          goldenSetName={detail.name}
+          isPending={deleteMutation.isPending}
+          errorInfo={deleteErrorInfo}
+          onConfirm={() => deleteMutation.mutate()}
+          onCancel={() => {
+            if (!deleteMutation.isPending) {
+              setShowDeleteConfirm(false);
+              setDeleteErrorInfo(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -666,9 +1047,7 @@ export function AdminGoldenSetsPage() {
     [listQuery.data],
   );
 
-  const errorMessage = listQuery.isError
-    ? getApiErrorMessage(listQuery.error, "골든셋 목록을 불러오지 못했습니다.")
-    : null;
+  const errorInfo = listQuery.isError ? classifyListError(listQuery.error) : null;
 
   return (
     <div className="p-3 sm:p-6 space-y-6 max-w-7xl">
@@ -709,11 +1088,23 @@ export function AdminGoldenSetsPage() {
         </button>
       </div>
 
-      {errorMessage && (
+      {errorInfo && (
         <div className="rounded-xl bg-red-50 border border-red-200 p-4" role="alert">
-          <p className="text-sm font-bold text-red-800">목록을 불러오지 못했습니다</p>
-          <p className="text-xs text-red-700 mt-1">{errorMessage}</p>
-          <p className="text-xs text-red-700 mt-1">Scope Profile 바인딩 또는 권한을 확인해 주세요. (S2 ⑥)</p>
+          <p className="text-sm font-bold text-red-800">{errorInfo.title}</p>
+          <p className="text-xs text-red-700 mt-1">{errorInfo.body}</p>
+          {errorInfo.hint && (
+            <p className="text-xs text-red-700 mt-1">{errorInfo.hint}</p>
+          )}
+          {errorInfo.canRetry && (
+            <button
+              type="button"
+              onClick={() => listQuery.refetch()}
+              disabled={listQuery.isFetching}
+              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-red-700 hover:text-red-800 px-3 py-1.5 rounded-md border border-red-300 hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-60 disabled:cursor-not-allowed min-h-[32px]"
+            >
+              {listQuery.isFetching ? "재시도 중..." : "다시 시도"}
+            </button>
+          )}
         </div>
       )}
 
@@ -744,7 +1135,7 @@ export function AdminGoldenSetsPage() {
                   </td>
                 </tr>
               )}
-              {!listQuery.isLoading && sets.length === 0 && !errorMessage && (
+              {!listQuery.isLoading && sets.length === 0 && !errorInfo && (
                 <tr>
                   <td colSpan={8} className="px-4 py-8 text-center text-gray-500 text-sm">
                     아직 생성된 골든셋이 없습니다. 우측 상단 “골든셋 생성” 버튼으로 시작하세요.

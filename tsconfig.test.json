@@ -1,0 +1,31 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ES2022",
+    "jsx": "react-jsx",
+    "outDir": "dist-tests",
+    "rootDir": ".",
+    "noEmit": false,
+    "incremental": false,
+    "composite": false,
+    "declaration": false,
+    "sourceMap": false,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": false,
+    "plugins": []
+  },
+  "include": [
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "src/components/admin/DataTable.tsx",
+    "src/lib/utils.ts",
+    "src/features/admin/extraction-schemas/diffMismatch.ts",
+    "src/types/s2admin.ts"
+  ],
+  "exclude": ["node_modules", ".next", "dist-tests"]
+}

@@ -29,9 +29,12 @@ import type {
   SourceRef,
   Citation5Tuple,
   EvaluationRun,
-  EvaluationMetricSeries,
+  EvaluationRunDetail,
+  EvaluationCompareResult,
   ExtractionSchema,
   ExtractionSchemaField,
+  ExtractionSchemaVersion,
+  ExtractionSchemaDiff,
   ExtractionResult,
   ExtractionResultDetail,
   PagedResponse,
@@ -393,49 +396,189 @@ export const goldenSetsApi = {
   },
 };
 
+// Phase 7 FG7.2: 평가 실행 API.
+// 경로는 /api/v1/evaluations (admin prefix 아님). ACL 은 ActorContext 의 scope_profile_id 로 보장.
 export const evaluationsApi = {
-  listRuns: (params?: { page?: number; page_size?: number; golden_set_id?: string }) =>
+  listRuns: (params?: { offset?: number; limit?: number; status?: string }) =>
     api.get<PagedResponse<EvaluationRun>>(
-      `/api/v1/admin/evaluation-runs${buildQueryString(params ?? {})}`
+      `/api/v1/evaluations${buildQueryString(params ?? {})}`
     ),
 
-  getMetricSeries: (params?: { days?: number }) =>
-    api.get<SingleResponse<EvaluationMetricSeries[]>>(
-      `/api/v1/admin/evaluation-runs/metrics${buildQueryString(params ?? {})}`
+  get: (evalId: string) =>
+    api.get<SingleResponse<EvaluationRunDetail>>(
+      `/api/v1/evaluations/${evalId}`
+    ),
+
+  compare: (evalId1: string, evalId2: string) =>
+    api.get<SingleResponse<EvaluationCompareResult>>(
+      `/api/v1/evaluations/${evalId1}/compare${buildQueryString({ eval_id2: evalId2 })}`
     ),
 };
 
 export const extractionSchemasApi = {
-  list: () =>
-    api.get<SingleResponse<ExtractionSchema[]>>(
-      "/api/v1/admin/extraction-schemas"
+  list: (params?: {
+    is_deprecated?: boolean;
+    include_deleted?: boolean;
+    scope_profile_id?: string;
+    limit?: number;
+    offset?: number;
+  }) =>
+    api.get<PagedResponse<ExtractionSchema>>(
+      `/api/v1/extraction-schemas${buildQueryString(params ?? {})}`
     ),
 
-  get: (docTypeCode: string) =>
-    api.get<SingleResponse<ExtractionSchema & { fields: ExtractionSchemaField[] }>>(
-      `/api/v1/admin/extraction-schemas/${docTypeCode}`
+  get: (docTypeCode: string, params?: { include_deprecated?: boolean }) =>
+    api.get<SingleResponse<ExtractionSchema>>(
+      `/api/v1/extraction-schemas/${encodeURIComponent(docTypeCode)}${buildQueryString(params ?? {})}`
+    ),
+
+  getVersions: (
+    docTypeCode: string,
+    params?: {
+      limit?: number;
+      offset?: number;
+      // P3 후속-B: versions 페이지네이션에도 현재 스키마의 scope_profile_id 를
+      // 함께 전달해 ACL 필터가 초기 로드와 일관되도록 한다.
+      scope_profile_id?: string | null;
+    }
+  ) =>
+    api.get<PagedResponse<ExtractionSchemaVersion>>(
+      `/api/v1/extraction-schemas/${encodeURIComponent(docTypeCode)}/versions${buildQueryString(params ?? {})}`
+    ),
+
+  // P4-A: 서버 정본 버전 diff.
+  // GET /extraction-schemas/{doc_type}/versions/diff?base_version=X&target_version=Y
+  diffVersions: (
+    docTypeCode: string,
+    params: {
+      base_version: number;
+      target_version: number;
+      scope_profile_id?: string | null;
+    }
+  ) =>
+    api.get<SingleResponse<ExtractionSchemaDiff>>(
+      `/api/v1/extraction-schemas/${encodeURIComponent(docTypeCode)}/versions/diff${buildQueryString(params)}`
+    ),
+
+  // P4-B: 특정 버전으로 되돌리기 (새 버전 생성).
+  rollback: (
+    docTypeCode: string,
+    body: {
+      target_version: number;
+      change_summary?: string | null;
+      scope_profile_id?: string | null;
+    }
+  ) =>
+    api.post<SingleResponse<ExtractionSchema>>(
+      `/api/v1/extraction-schemas/${encodeURIComponent(docTypeCode)}/rollback`,
+      body
+    ),
+
+  create: (body: {
+    doc_type_code: string;
+    fields: Record<string, ExtractionSchemaField>;
+    scope_profile_id?: string | null;
+    extra_metadata?: Record<string, unknown> | null;
+  }) =>
+    api.post<SingleResponse<ExtractionSchema>>(
+      "/api/v1/extraction-schemas",
+      body
+    ),
+
+  update: (
+    docTypeCode: string,
+    body: {
+      fields: Record<string, ExtractionSchemaField>;
+      change_summary?: string | null;
+    }
+  ) =>
+    api.put<SingleResponse<ExtractionSchema>>(
+      `/api/v1/extraction-schemas/${encodeURIComponent(docTypeCode)}`,
+      body
+    ),
+
+  deprecate: (docTypeCode: string, reason: string) =>
+    api.patch<SingleResponse<ExtractionSchema>>(
+      `/api/v1/extraction-schemas/${encodeURIComponent(docTypeCode)}/deprecate`,
+      { reason }
+    ),
+
+  delete: (docTypeCode: string) =>
+    api.delete<void>(
+      `/api/v1/extraction-schemas/${encodeURIComponent(docTypeCode)}`
     ),
 };
 
+/**
+ * 백엔드 `/api/v1/admin/extraction-results` 목록 응답 계약(B 스코프, 2026-04-22).
+ *
+ * 내부 `list_response` helper 는 아래 envelope 을 그대로 내려준다:
+ *   { data: [...], meta: { request_id, trace_id, pagination: { page, page_size,
+ *     total, has_next, next_cursor } } }
+ *
+ * 기존 `PagedResponse<T>` 는 meta 를 flat 하게 선언해 pagination 필드에 접근할
+ * 수 없으므로, 본 API 는 전용 envelope 타입을 사용한다.
+ */
+export interface ExtractionQueuePagedResponse<T> {
+  data: T[];
+  meta?: {
+    request_id?: string | null;
+    trace_id?: string | null;
+    pagination?: {
+      page?: number;
+      page_size?: number;
+      total?: number | null;
+      has_next?: boolean | null;
+      next_cursor?: string | null;
+    };
+  };
+}
+
+export interface ExtractionQueueApproveBody {
+  approval_comment?: string | null;
+  /**
+   * 일부 필드를 승인 전 덮어쓰려면 여기에 실어 보낸다. 빈 dict 또는 미지정이면
+   * 원본 추출값을 그대로 승인(서버 계약상 동일).
+   */
+  overrides?: Record<string, unknown>;
+}
+
 export const extractionQueueApi = {
-  list: (params?: { page?: number; page_size?: number; document_type?: string; status?: string }) =>
-    api.get<PagedResponse<ExtractionResult>>(
+  /**
+   * 추출 결과 목록.
+   *
+   * Q1-A5: `scope_profile_id` 는 S2 ⑥ 원칙(ACL 필터링 의무) 에 따라
+   * 모든 조회 API 에 전달되어야 한다. 서버가 scope_profile_id 를 받아
+   * 접근 가능한 문서의 추출 결과만 반환하도록 게이트한다.
+   * 빈 문자열은 "전역 스코프(혹은 사용자 기본 스코프)" 로 취급.
+   *
+   * B 스코프(2026-04-22): 응답 타입을 envelope 에 맞춰 `ExtractionQueuePagedResponse`
+   * 로 교체. 페이지네이션 total/has_next 가 표시된다.
+   */
+  list: (params?: {
+    page?: number;
+    page_size?: number;
+    document_type?: string;
+    status?: string;
+    scope_profile_id?: string;
+  }) =>
+    api.get<ExtractionQueuePagedResponse<ExtractionResult>>(
       `/api/v1/admin/extraction-results${buildQueryString(params ?? {})}`
     ),
 
-  get: (id: string) =>
+  get: (id: string, params?: { scope_profile_id?: string }) =>
     api.get<SingleResponse<ExtractionResultDetail>>(
-      `/api/v1/admin/extraction-results/${id}`
+      `/api/v1/admin/extraction-results/${id}${buildQueryString(params ?? {})}`
     ),
 
-  approve: (id: string, overrides?: Record<string, unknown>) =>
-    api.post<SingleResponse<ExtractionResult>>(
+  approve: (id: string, body?: ExtractionQueueApproveBody) =>
+    api.post<SingleResponse<ExtractionResultDetail>>(
       `/api/v1/admin/extraction-results/${id}/approve`,
-      { overrides }
+      body ?? {}
     ),
 
   reject: (id: string, reason?: string) =>
-    api.post<SingleResponse<ExtractionResult>>(
+    api.post<SingleResponse<ExtractionResultDetail>>(
       `/api/v1/admin/extraction-results/${id}/reject`,
       { reason }
     ),

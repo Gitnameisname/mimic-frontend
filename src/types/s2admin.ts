@@ -368,40 +368,191 @@ export interface GoldenSetImportResult {
   errors: string[];
 }
 
+// ── Phase 7 FG7.2: Evaluation Runner (백엔드 /api/v1/evaluations 와 1:1 매핑) ──
+//
+// 백엔드 (backend/app/repositories/evaluation_repository.py::EvaluationRunRepository) 의
+// list/get SELECT 컬럼을 그대로 반영한다. 필드 추가·변경 시 양쪽을 동시에 맞춘다.
+
+export type EvaluationRunStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed";
+
 export interface EvaluationRun {
   id: string;
-  golden_set_id: string;
-  golden_set_name: string;
-  prompt_version_id: string | null;
-  model_name: string | null;
-  ran_at: string;
-  item_count: number;
-  avg_faithfulness: number | null;
-  avg_answer_relevance: number | null;
-  citation_present_rate: number | null;
-  passed_ci: boolean | null;
+  batch_id: string;
+  status: EvaluationRunStatus;
+  scope_id: string;
+  actor_id: string;
+  actor_type: "user" | "agent";
+  total_items: number;
+  successful_items: number | null;
+  failed_items: number | null;
+  overall_score: number | null;
+  duration_seconds: number | null;
+  created_at: string;
+  completed_at: string | null;
+  // get_by_id 에서만 채워지는 확장 필드
+  total_tokens?: number | null;
+  total_latency_ms?: number | null;
+  total_cost?: number | null;
+  started_at?: string | null;
 }
 
-export interface EvaluationMetricSeries {
-  date: string;
+export interface EvaluationResultRecord {
+  id: string;
+  item_id: string;
+  question: string;
+  answer: string;
   faithfulness: number | null;
   answer_relevance: number | null;
+  context_precision: number | null;
+  context_recall: number | null;
   citation_present_rate: number | null;
+  hallucination_rate: number | null;
+  overall_score: number | null;
+  total_latency_ms: number | null;
+  total_tokens: number | null;
+  estimated_cost: number | null;
+  created_at: string;
 }
 
-export interface ExtractionSchema {
-  id: string;
-  document_type_code: string;
-  fields_count: number;
-  extraction_mode: "deterministic" | "probabilistic";
-  updated_at: string;
+export interface EvaluationRunDetail extends EvaluationRun {
+  results: EvaluationResultRecord[];
 }
+
+export interface EvaluationMetricComparisonEntry {
+  eval1: number | null;
+  eval2: number | null;
+  difference: number;
+}
+
+export type EvaluationMetricKey =
+  | "faithfulness"
+  | "answer_relevance"
+  | "context_precision"
+  | "context_recall"
+  | "citation_present_rate"
+  | "hallucination_rate";
+
+export interface EvaluationCompareResult {
+  eval_id_1: string;
+  eval_id_2: string;
+  metric_comparison: Record<EvaluationMetricKey, EvaluationMetricComparisonEntry>;
+  overall_score_1: number | null;
+  overall_score_2: number | null;
+  improvement: number;
+}
+
+/**
+ * 백엔드 `ExtractionFieldDef` (app/models/extraction.py) 와 정합.
+ *
+ * 필드명은 snake_case 강제(서버 검증). 필드 타입은 S1 원칙 ①에 따라
+ * 하드코딩 금지가 아니라 "열거 가능한 스키마 타입 집합"으로 고정한다.
+ */
+export type ExtractionFieldType =
+  | "string"
+  | "number"
+  | "date"
+  | "boolean"
+  | "array"
+  | "object"
+  | "enum";
 
 export interface ExtractionSchemaField {
-  name: string;
-  type: "string" | "number" | "boolean" | "array" | "object";
+  field_name: string;
+  field_type: ExtractionFieldType;
   required: boolean;
-  description: string | null;
+  description: string;
+  // 검증 규칙
+  pattern?: string | null;
+  instruction?: string | null;
+  examples?: string[];
+  // 크기/범위 제약
+  max_length?: number | null;
+  min_value?: number | null;
+  max_value?: number | null;
+  // 타입별 추가 속성
+  date_format?: string | null;
+  enum_values?: string[] | null;
+  default_value?: unknown;
+  // object 중첩
+  nested_schema?: Record<string, ExtractionSchemaField> | null;
+}
+
+/**
+ * 백엔드 `ExtractionSchemaResponse` (app/schemas/extraction.py) 와 정합.
+ *
+ * - fields 는 객체(field_name → ExtractionSchemaField) 구조. 필드 개수는
+ *   Object.keys(fields).length 로 계산.
+ * - created_at/updated_at 은 ISO8601 문자열 (백엔드 .isoformat()).
+ * - scope_profile_id 는 S2 원칙 ⑥ ACL 슬롯 (optional).
+ */
+export interface ExtractionSchema {
+  id: string;
+  doc_type_code: string;
+  version: number;
+  fields: Record<string, ExtractionSchemaField>;
+  is_deprecated: boolean;
+  deprecation_reason: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  updated_by: string;
+  scope_profile_id: string | null;
+  extra_metadata: Record<string, unknown>;
+}
+
+/** 백엔드 `ExtractionSchemaVersionResponse` 와 정합.
+ *
+ * P5-2: `rolled_back_from_version` — 해당 버전이 롤백으로 생성되었다면 복원 기준이 된
+ * 과거 버전 번호. 일반 편집/최초 생성은 null. 프론트 "반복 rollback 경고" 의 입력.
+ */
+export interface ExtractionSchemaVersion {
+  id: string;
+  schema_id: string;
+  version: number;
+  fields: Record<string, ExtractionSchemaField>;
+  is_deprecated: boolean;
+  deprecation_reason: string | null;
+  change_summary: string | null;
+  changed_fields: string[];
+  created_at: string;
+  created_by: string;
+  rolled_back_from_version?: number | null;
+}
+
+// ─── P4-A: 서버 정본 버전 Diff 응답 ───
+
+/**
+ * 백엔드 `ExtractionSchemaDiffResponse` 와 정합.
+ *
+ * - base_version → target_version 방향 차이.
+ * - added: target 에만 있는 필드명
+ * - removed: base 에만 있는 필드명
+ * - modified: 양쪽에 있고 속성 값이 다른 필드 + 속성별 before/after
+ * - unchanged_count: 양쪽에 있고 동일한 필드 수
+ */
+export interface ExtractionSchemaPropertyDiff {
+  key: string;
+  before: unknown;
+  after: unknown;
+}
+
+export interface ExtractionSchemaModifiedFieldDiff {
+  name: string;
+  changes: ExtractionSchemaPropertyDiff[];
+}
+
+export interface ExtractionSchemaDiff {
+  doc_type_code: string;
+  base_version: number;
+  target_version: number;
+  added: string[];
+  removed: string[];
+  modified: ExtractionSchemaModifiedFieldDiff[];
+  unchanged_count: number;
 }
 
 export interface ExtractionResult {

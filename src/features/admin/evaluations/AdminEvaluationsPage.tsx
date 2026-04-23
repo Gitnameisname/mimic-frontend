@@ -1,237 +1,390 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
 import { evaluationsApi } from "@/lib/api/s2admin";
-import type { EvaluationRun, EvaluationMetricSeries } from "@/types/s2admin";
+import type { EvaluationRun, EvaluationRunStatus } from "@/types/s2admin";
+import { DataTable, type Column } from "@/components/admin/DataTable";
 import { cn } from "@/lib/utils";
+import {
+  STATUS_BADGE_STYLE,
+  STATUS_LABEL,
+  classifyEvalListError,
+  formatCost,
+  formatDateTime,
+  formatDuration,
+  formatInt,
+  formatScore,
+} from "./helpers";
+import { EvaluationErrorBanner } from "./ErrorBanner";
 
-// ─── 스켈레톤 배너 ───
+const STATUS_OPTIONS: Array<{ value: EvaluationRunStatus | "all"; label: string }> = [
+  { value: "all", label: "전체" },
+  { value: "queued", label: STATUS_LABEL.queued },
+  { value: "running", label: STATUS_LABEL.running },
+  { value: "completed", label: STATUS_LABEL.completed },
+  { value: "failed", label: STATUS_LABEL.failed },
+];
 
-function SkeletonBanner() {
+// ─── 상태 배지 ───
+
+function StatusBadge({ status }: { status: EvaluationRunStatus }) {
   return (
-    <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
-      <svg className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <div>
-        <p className="text-sm font-bold text-amber-800">스켈레톤 상태</p>
-        <p className="text-xs text-amber-700 mt-0.5">
-          이 페이지는 Phase 7 FG7.2 완료 후 평가 러너 API와 연결됩니다. 현재는 목 데이터로 동작합니다.
-        </p>
-      </div>
-    </div>
+    <span
+      className={cn(
+        "inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold",
+        STATUS_BADGE_STYLE[status],
+      )}
+    >
+      {STATUS_LABEL[status]}
+    </span>
   );
 }
 
-// ─── 목 데이터 ───
+function ActorBadge({ type }: { type: "user" | "agent" }) {
+  return type === "user" ? (
+    <span className="inline-flex items-center gap-1 text-xs text-gray-600">
+      <span aria-hidden="true">👤</span>
+      <span>사용자</span>
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 text-xs text-purple-700">
+      <span aria-hidden="true">🤖</span>
+      <span>에이전트</span>
+    </span>
+  );
+}
 
-const MOCK_RUNS: EvaluationRun[] = [
-  { id: "er-1", golden_set_id: "gs-1", golden_set_name: "RAG 기본 평가셋", prompt_version_id: "pv-1", model_name: "gpt-4o", ran_at: "2026-04-15T10:00:00Z", item_count: 50, avg_faithfulness: 0.87, avg_answer_relevance: 0.82, citation_present_rate: 0.94, passed_ci: true },
-  { id: "er-2", golden_set_id: "gs-1", golden_set_name: "RAG 기본 평가셋", prompt_version_id: "pv-2", model_name: "claude-sonnet-4-6", ran_at: "2026-04-14T14:30:00Z", item_count: 50, avg_faithfulness: 0.91, avg_answer_relevance: 0.88, citation_present_rate: 0.96, passed_ci: true },
-  { id: "er-3", golden_set_id: "gs-2", golden_set_name: "문서 검색 평가셋", prompt_version_id: "pv-1", model_name: "gpt-4o", ran_at: "2026-04-13T09:00:00Z", item_count: 30, avg_faithfulness: 0.75, avg_answer_relevance: 0.79, citation_present_rate: 0.87, passed_ci: false },
-];
+function ScoreBadge({ value }: { value: number | null }) {
+  if (value === null) return <span className="text-gray-400">-</span>;
+  const pct = value * 100;
+  const tone =
+    pct >= 80
+      ? "text-green-700 font-semibold"
+      : pct >= 60
+        ? "text-amber-700 font-semibold"
+        : "text-red-700 font-semibold";
+  return <span className={tone}>{formatScore(value)}</span>;
+}
 
-const MOCK_SERIES: EvaluationMetricSeries[] = [
-  { date: "2026-04-10", faithfulness: 0.81, answer_relevance: 0.79, citation_present_rate: 0.90 },
-  { date: "2026-04-11", faithfulness: 0.83, answer_relevance: 0.81, citation_present_rate: 0.91 },
-  { date: "2026-04-12", faithfulness: 0.85, answer_relevance: 0.83, citation_present_rate: 0.92 },
-  { date: "2026-04-13", faithfulness: 0.75, answer_relevance: 0.79, citation_present_rate: 0.87 },
-  { date: "2026-04-14", faithfulness: 0.91, answer_relevance: 0.88, citation_present_rate: 0.96 },
-  { date: "2026-04-15", faithfulness: 0.87, answer_relevance: 0.82, citation_present_rate: 0.94 },
-];
+// ─── 요약 카드 ───
 
-const THRESHOLDS = {
-  faithfulness: 0.80,
-  answer_relevance: 0.75,
-  citation_present_rate: 0.90,
-};
-
-// ─── 지표 카드 ───
-
-function MetricCard({
-  label,
-  value,
-  threshold,
+function SummaryCards({
+  runs,
+  loading,
 }: {
-  label: string;
-  value: number | null;
-  threshold: number;
+  runs: EvaluationRun[];
+  loading: boolean;
 }) {
-  const pass = value !== null && value >= threshold;
+  const latest = runs[0];
+  const completed = runs.filter((r) => r.status === "completed");
+  const pass = completed.filter(
+    (r) => (r.overall_score ?? 0) >= 0.8,
+  ).length;
+  const failed = runs.filter((r) => r.status === "failed").length;
+
+  const cards: Array<{ label: string; value: string; tone?: string }> = [
+    {
+      label: "최근 실행",
+      value: latest ? formatDateTime(latest.created_at) : "-",
+    },
+    {
+      label: "완료된 run 중 통과",
+      value: completed.length
+        ? `${pass} / ${completed.length}`
+        : "-",
+      tone: completed.length && pass === completed.length ? "text-green-700" : undefined,
+    },
+    {
+      label: "실패 run",
+      value: failed ? String(failed) : "0",
+      tone: failed > 0 ? "text-red-700" : undefined,
+    },
+    {
+      label: "최근 전체 점수",
+      value:
+        latest && latest.overall_score !== null
+          ? formatScore(latest.overall_score)
+          : "-",
+      tone:
+        latest && (latest.overall_score ?? 0) >= 0.8
+          ? "text-green-700"
+          : latest && (latest.overall_score ?? 0) > 0
+            ? "text-red-700"
+            : undefined,
+    },
+  ];
+
   return (
-    <article className={cn(
-      "rounded-xl border p-4",
-      value === null ? "bg-gray-50 border-gray-200" : pass ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
-    )}>
-      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">{label}</p>
-      <p className={cn("text-3xl font-bold", value === null ? "text-gray-400" : pass ? "text-green-800" : "text-red-800")}>
-        {value !== null ? (value * 100).toFixed(1) + "%" : "-"}
-      </p>
-      <p className="text-xs text-gray-500 mt-1">
-        기준: {(threshold * 100).toFixed(0)}% · {value === null ? "데이터 없음" : pass ? "통과" : "미달"}
-      </p>
-    </article>
+    <section
+      aria-label="평가 현황 요약"
+      className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+    >
+      {cards.map((c) => (
+        <article
+          key={c.label}
+          className="rounded-xl border border-gray-200 bg-white p-4"
+        >
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            {c.label}
+          </p>
+          <p
+            className={cn(
+              "text-2xl font-bold mt-1 truncate",
+              loading ? "text-gray-300" : c.tone ?? "text-gray-900",
+            )}
+          >
+            {loading ? "—" : c.value}
+          </p>
+        </article>
+      ))}
+    </section>
   );
 }
 
 // ═══════════════════════════════════════
-// AdminEvaluationsPage (스켈레톤)
+// AdminEvaluationsPage
 // ═══════════════════════════════════════
 
 export function AdminEvaluationsPage() {
-  const { data: runsData, isError: runsError } = useQuery({
-    queryKey: ["admin", "evaluation-runs"],
-    queryFn: () => evaluationsApi.listRuns({ page_size: 10 }),
+  const router = useRouter();
+  const [statusFilter, setStatusFilter] = useState<EvaluationRunStatus | "all">("all");
+  const [compareSelection, setCompareSelection] = useState<string[]>([]);
+
+  const listQuery = useQuery({
+    queryKey: ["admin", "evaluations", statusFilter],
+    queryFn: () =>
+      evaluationsApi.listRuns({
+        limit: 50,
+        ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      }),
     retry: false,
   });
 
-  const { data: seriesData, isError: seriesError } = useQuery({
-    queryKey: ["admin", "evaluation-series"],
-    queryFn: () => evaluationsApi.getMetricSeries({ days: 30 }),
-    retry: false,
-  });
+  const runs: EvaluationRun[] = useMemo(
+    () => listQuery.data?.data ?? [],
+    [listQuery.data],
+  );
 
-  const runs = runsError ? MOCK_RUNS : (runsData?.data ?? MOCK_RUNS);
-  const series = seriesError ? MOCK_SERIES : (seriesData?.data ?? MOCK_SERIES);
+  const errorInfo = listQuery.isError
+    ? classifyEvalListError(listQuery.error, "평가 목록")
+    : null;
 
-  const latest = runs[0];
+  const toggleCompare = (id: string) => {
+    setCompareSelection((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= 2) return [prev[1], id]; // 가장 오래된 선택 교체
+      return [...prev, id];
+    });
+  };
+
+  const columns: Column<EvaluationRun>[] = [
+    {
+      key: "compare",
+      header: "비교",
+      width: "56px",
+      render: (row) => {
+        const checked = compareSelection.includes(row.id);
+        // 체크박스 조작은 행 클릭(상세 이동)과 독립적. 이미 2개 선택 상태에서 세 번째를
+        // 선택하면 toggleCompare() 가 가장 오래된 선택을 교체한다(사용자 혼란 감소 목적).
+        return (
+          <label
+            className="flex items-center justify-center cursor-pointer"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={() => toggleCompare(row.id)}
+              aria-label={`${row.batch_id} 을(를) 비교 대상으로 선택`}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+          </label>
+        );
+      },
+    },
+    {
+      key: "batch",
+      header: "배치 ID",
+      render: (row) => (
+        <div className="flex flex-col">
+          <span className="font-mono text-xs text-gray-900 truncate max-w-[220px]">
+            {row.batch_id}
+          </span>
+          <span className="text-[11px] text-gray-400 font-mono truncate max-w-[220px]">
+            {row.id.slice(0, 8)}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: "status",
+      header: "상태",
+      width: "100px",
+      render: (row) => <StatusBadge status={row.status} />,
+    },
+    {
+      key: "progress",
+      header: "성공 / 전체",
+      width: "120px",
+      render: (row) => (
+        <span className="text-gray-700">
+          {formatInt(row.successful_items)} / {formatInt(row.total_items)}
+          {(row.failed_items ?? 0) > 0 && (
+            <span className="ml-2 text-red-600 text-xs">
+              (실패 {row.failed_items})
+            </span>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: "overall",
+      header: "전체 점수",
+      width: "110px",
+      render: (row) => <ScoreBadge value={row.overall_score} />,
+    },
+    {
+      key: "duration",
+      header: "소요시간",
+      width: "110px",
+      render: (row) => (
+        <span className="text-gray-600 text-xs">
+          {formatDuration(row.duration_seconds)}
+        </span>
+      ),
+    },
+    {
+      key: "actor",
+      header: "실행자",
+      width: "110px",
+      render: (row) => <ActorBadge type={row.actor_type} />,
+    },
+    {
+      key: "created",
+      header: "실행일",
+      width: "160px",
+      render: (row) => (
+        <span className="text-xs text-gray-500 whitespace-nowrap">
+          {formatDateTime(row.created_at)}
+        </span>
+      ),
+    },
+  ];
+
+  const canCompare = compareSelection.length === 2;
 
   return (
     <div className="p-3 sm:p-6 space-y-6 max-w-7xl">
+      {/* 헤더 */}
       <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-gray-200">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">평가 결과 대시보드</h1>
-        <div className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold",
-          latest?.passed_ci ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-        )}>
-          <span className={cn("w-2 h-2 rounded-full", latest?.passed_ci ? "bg-green-500" : "bg-red-500")} aria-hidden="true" />
-          CI: {latest?.passed_ci ? "통과" : "실패"}
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            평가 결과
+          </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            RAG 품질 평가 실행 이력과 지표를 확인합니다. 두 run 을 선택해 비교할 수 있습니다.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={!canCompare}
+            onClick={() => {
+              if (!canCompare) return;
+              const [a, b] = compareSelection;
+              router.push(`/admin/evaluations/compare?a=${a}&b=${b}`);
+            }}
+            className={cn(
+              "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors",
+              canCompare
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "bg-gray-100 text-gray-400 cursor-not-allowed",
+            )}
+            aria-disabled={!canCompare}
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7h12M8 12h12M8 17h12M4 7h.01M4 12h.01M4 17h.01"
+              />
+            </svg>
+            두 run 비교 ({compareSelection.length}/2)
+          </button>
         </div>
       </div>
 
-      <SkeletonBanner />
+      {/* 요약 카드 */}
+      <SummaryCards runs={runs} loading={listQuery.isLoading} />
 
-      {/* 최근 실행 요약 */}
-      {latest && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-sm font-bold text-gray-900 mb-3">최근 평가 실행 요약</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">골든셋</p>
-              <p className="font-semibold text-gray-900 truncate">{latest.golden_set_name}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">모델</p>
-              <p className="font-semibold text-gray-900 font-mono text-xs">{latest.model_name}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">평가 항목 수</p>
-              <p className="font-semibold text-gray-900">{latest.item_count}개</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">실행 시각</p>
-              <p className="font-semibold text-gray-900 text-xs">{new Date(latest.ran_at).toLocaleString("ko")}</p>
-            </div>
+      {/* 필터 + 에러 + 테이블 */}
+      <section
+        aria-label="평가 실행 이력"
+        className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+      >
+        <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
+          <h2 className="text-base font-bold text-gray-900">실행 이력</h2>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-gray-600" htmlFor="status-filter">
+              상태 필터
+            </label>
+            <select
+              id="status-filter"
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as EvaluationRunStatus | "all")
+              }
+              className="text-sm border border-gray-300 rounded-md px-2 py-1.5 bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 min-h-[36px]"
+            >
+              {STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
-      )}
 
-      {/* 지표별 현황 */}
-      <section aria-label="지표별 현황" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <MetricCard label="Faithfulness" value={latest?.avg_faithfulness ?? null} threshold={THRESHOLDS.faithfulness} />
-        <MetricCard label="Answer Relevance" value={latest?.avg_answer_relevance ?? null} threshold={THRESHOLDS.answer_relevance} />
-        <MetricCard label="Citation Present Rate" value={latest?.citation_present_rate ?? null} threshold={THRESHOLDS.citation_present_rate} />
+        {errorInfo && (
+          <EvaluationErrorBanner
+            info={errorInfo}
+            onRetry={() => listQuery.refetch()}
+            isRetrying={listQuery.isFetching}
+          />
+        )}
+
+        {!errorInfo && (
+          <DataTable
+            columns={columns}
+            rows={runs}
+            rowKey={(r) => r.id}
+            onRowClick={(r) => router.push(`/admin/evaluations/${r.id}`)}
+            loading={listQuery.isLoading}
+            emptyMessage={
+              statusFilter === "all"
+                ? "아직 실행된 평가가 없습니다. POST /api/v1/evaluations/run 으로 시작할 수 있습니다."
+                : `${STATUS_LABEL[statusFilter as EvaluationRunStatus]} 상태의 run 이 없습니다.`
+            }
+            ariaLabel="평가 실행 이력"
+          />
+        )}
       </section>
 
-      {/* 추이 그래프 */}
-      {series.length > 0 && (
-        <section aria-label="지표 추이" className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-base font-bold text-gray-900 mb-4">30일 지표 추이</h2>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={series} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} />
-              <YAxis domain={[0, 1]} tickFormatter={(v) => `${(v * 100).toFixed(0)}%`} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-              <Tooltip formatter={(v) => [`${(Number(v) * 100).toFixed(1)}%`]} contentStyle={{ fontSize: 12 }} />
-              <Legend />
-              <Line type="monotone" dataKey="faithfulness" stroke="#3b82f6" strokeWidth={2} dot={false} name="Faithfulness" />
-              <Line type="monotone" dataKey="answer_relevance" stroke="#22c55e" strokeWidth={2} dot={false} name="Answer Relevance" />
-              <Line type="monotone" dataKey="citation_present_rate" stroke="#f59e0b" strokeWidth={2} dot={false} name="Citation Present" />
-            </LineChart>
-          </ResponsiveContainer>
-        </section>
-      )}
-
-      {/* 실행 이력 테이블 */}
-      <section aria-label="평가 실행 이력" className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-200">
-          <h2 className="text-base font-bold text-gray-900">평가 실행 이력</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">골든셋</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">모델</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Faithfulness</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Answer Rel.</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Citation</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">CI</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">실행일</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {runs.map((r) => (
-                <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-semibold text-gray-900">{r.golden_set_name}</td>
-                  <td className="px-4 py-3 text-gray-600 font-mono text-xs">{r.model_name}</td>
-                  <td className="px-4 py-3 text-right">
-                    {r.avg_faithfulness !== null ? (
-                      <span className={r.avg_faithfulness >= THRESHOLDS.faithfulness ? "text-green-700 font-semibold" : "text-red-700 font-semibold"}>
-                        {(r.avg_faithfulness * 100).toFixed(1)}%
-                      </span>
-                    ) : "-"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {r.avg_answer_relevance !== null ? (
-                      <span className={r.avg_answer_relevance >= THRESHOLDS.answer_relevance ? "text-green-700 font-semibold" : "text-red-700 font-semibold"}>
-                        {(r.avg_answer_relevance * 100).toFixed(1)}%
-                      </span>
-                    ) : "-"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {r.citation_present_rate !== null ? (
-                      <span className={r.citation_present_rate >= THRESHOLDS.citation_present_rate ? "text-green-700 font-semibold" : "text-red-700 font-semibold"}>
-                        {(r.citation_present_rate * 100).toFixed(1)}%
-                      </span>
-                    ) : "-"}
-                  </td>
-                  <td className="px-4 py-3">
-                    {r.passed_ci === null ? (
-                      <span className="text-gray-400 text-xs">-</span>
-                    ) : r.passed_ci ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800">통과</span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-800">실패</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{new Date(r.ran_at).toLocaleDateString("ko")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {/* Foot note: 평가 러너 호출 정보 */}
+      <p className="text-xs text-gray-500">
+        평가 비용/지연시간의 자세한 metric(토큰, {formatCost(0.0001)} 단위 비용 등)은
+        각 run 의 상세 화면에서 확인하실 수 있습니다.
+      </p>
     </div>
   );
 }
