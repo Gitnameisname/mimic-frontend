@@ -8,3 +8,9 @@ export { diffApi } from "./diff";
 export { ragApi, queryStream } from "./rag";
 export { proposalsApi } from "./proposals";
 export type { AgentProposal, ProposalListResponse, ProposalStats } from "./proposals";
+export { vectorizationApi } from "./vectorization";
+export type {
+  VectorizationStatus,
+  VectorizationStatusResponse,
+  ReindexResponse,
+} from "./vectorization";

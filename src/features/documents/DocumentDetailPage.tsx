@@ -13,6 +13,7 @@ import { ErrorState } from "@/components/feedback/ErrorState";
 import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { DocumentTree } from "./DocumentTree";
 import { NodeRenderer } from "./NodeRenderer";
+import { VectorizationPanel } from "./VectorizationPanel";
 import { WorkflowActionModal } from "../workflow/WorkflowActionModal";
 import { RagPanel } from "../rag/RagPanel";
 import { AgentProposalsTab } from "./AgentProposalsTab";
@@ -112,7 +113,11 @@ export function DocumentDetailPage({ documentId }: Props) {
             </Link>
             <div className="flex items-start justify-between gap-4">
               <h1 className="text-2xl font-bold text-gray-900 flex-1">{doc.title}</h1>
-              <WorkflowStatusBadge status={status!} />
+              <div className="flex flex-col items-end gap-1">
+                <WorkflowStatusBadge status={status!} />
+                {/* FG 0-5 (2026-04-23): 벡터화 상태 + 재벡터화 버튼 */}
+                <VectorizationPanel documentId={documentId} compact />
+              </div>
             </div>
             <div className="mt-2 flex items-center gap-3 text-sm text-gray-500 flex-wrap">
               <DocumentTypeBadge type={doc.document_type} />
