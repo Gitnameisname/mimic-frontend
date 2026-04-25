@@ -7,12 +7,13 @@ import { evaluationsApi } from "@/lib/api/s2admin";
 import type { EvaluationRun, EvaluationRunStatus } from "@/types/s2admin";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { cn } from "@/lib/utils";
+import { BADGE_BASE } from "@/lib/styles/tokens";
+import { formatDateTime } from "@/lib/utils/date";
 import {
   STATUS_BADGE_STYLE,
   STATUS_LABEL,
   classifyEvalListError,
   formatCost,
-  formatDateTime,
   formatDuration,
   formatInt,
   formatScore,
@@ -32,10 +33,7 @@ const STATUS_OPTIONS: Array<{ value: EvaluationRunStatus | "all"; label: string 
 function StatusBadge({ status }: { status: EvaluationRunStatus }) {
   return (
     <span
-      className={cn(
-        "inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold",
-        STATUS_BADGE_STYLE[status],
-      )}
+      className={cn(BADGE_BASE, STATUS_BADGE_STYLE[status])}
     >
       {STATUS_LABEL[status]}
     </span>

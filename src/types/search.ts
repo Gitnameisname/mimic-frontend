@@ -95,6 +95,10 @@ export interface DocumentSearchParams {
   sort?: SearchSort;
   page?: number;
   limit?: number;
+  // S3 Phase 2 FG 2-1 UX 6차 (2026-04-24): "이 컬렉션/폴더 안에서 본문 검색"
+  collection?: string;
+  folder?: string;
+  include_subfolders?: boolean;
 }
 
 export interface NodeSearchParams {

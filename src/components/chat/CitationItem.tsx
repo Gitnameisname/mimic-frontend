@@ -16,6 +16,7 @@ import CitationVerificationBadge, {
   type VerificationStatus,
 } from "./CitationVerificationBadge";
 import { verifyCitationHash } from "@/lib/citationService";
+import { toQueryString } from "@/lib/utils/url";
 import type { RAGCitationInfo } from "@/types/conversation";
 
 interface CitationItemProps {
@@ -43,15 +44,11 @@ export default function CitationItem({ citation }: CitationItemProps) {
   }, [c.document_id, c.version_id, c.node_id, c.content_hash]);
 
   // 원문 보기 URL 구성
-  const docUrl = (() => {
-    const base = `/documents/${c.document_id}`;
-    const params = new URLSearchParams();
-    if (c.version_id) params.set("version", c.version_id);
-    if (c.node_id) params.set("node", c.node_id);
-    if (c.span_offset != null) params.set("highlight", String(c.span_offset));
-    const qs = params.toString();
-    return qs ? `${base}?${qs}` : base;
-  })();
+  const docUrl = `/documents/${c.document_id}${toQueryString({
+    version: c.version_id,
+    node: c.node_id,
+    highlight: c.span_offset,
+  })}`;
 
   // BibTeX 복사
   const handleCopyBibTex = async () => {

@@ -13,6 +13,7 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { ALERT_ERROR } from "@/lib/styles/tokens";
 import { AuthInput } from "@/components/auth/AuthInput";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { GitLabButton } from "@/components/auth/GitLabButton";
@@ -84,7 +85,8 @@ function LoginContent() {
         {serverError && (
           <div
             role="alert"
-            className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium flex items-start gap-3"
+            // 도서관 §1.8 FE-G4 (2026-04-25): ALERT_ERROR 토큰 + 추가 layout 클래스 cn 합성
+            className={`${ALERT_ERROR} flex items-start gap-3`}
           >
             <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />

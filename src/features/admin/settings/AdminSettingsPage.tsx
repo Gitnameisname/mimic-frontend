@@ -16,6 +16,7 @@ import { adminApi } from "@/lib/api/admin";
 import { useAuth } from "@/contexts/AuthContext";
 import { Modal, ModalActions } from "@/components/feedback/Modal";
 import { useMutationWithToast } from "@/hooks/useMutationWithToast";
+import { isString } from "@/lib/utils/guards";
 import type {
   AllSettingsResponse,
   SettingCategory,
@@ -43,7 +44,7 @@ const KEY_LABELS: Record<string, string> = {
 function valueType(v: SettingValue): "bool" | "number" | "string" | "json" {
   if (typeof v === "boolean") return "bool";
   if (typeof v === "number") return "number";
-  if (typeof v === "string") return "string";
+  if (isString(v)) return "string";
   return "json";
 }
 
@@ -146,7 +147,7 @@ function SettingRow({
       <input
         id={fieldId}
         type="text"
-        value={typeof draftValue === "string" ? draftValue : String(draftValue ?? "")}
+        value={isString(draftValue) ? draftValue : String(draftValue ?? "")}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         aria-invalid={isInvalid}

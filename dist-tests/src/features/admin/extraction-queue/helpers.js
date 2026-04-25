@@ -50,14 +50,26 @@ exports.parseFiltersFromUrl = parseFiltersFromUrl;
 exports.toSearchParamsString = toSearchParamsString;
 exports.validateRejectReason = validateRejectReason;
 const client_1 = require("@/lib/api/client");
+const errors_1 = require("@/lib/utils/errors");
+const guards_1 = require("@/lib/utils/guards");
+const url_1 = require("@/lib/utils/url");
 const constants_1 = require("./constants");
 /**
  * 에러 객체 → 사용자 친화 메시지.
  *
- * ApiError.message 는 서버가 내려준 detail 을 담고 있어 경우에 따라 그대로
- * 노출해도 괜찮지만, status 기반 카테고리 메시지가 있으면 우선한다.
+ * 도서관 §1.3 FE-G2 (2026-04-25): `classifyApiError` 위에서 도메인 별 한국어 메시지를
+ * 매핑한다. 본 helper 의 시그니처는 호환 유지 (string 반환).
+ *
+ * 도메인 우선순위:
+ *   - 404 → 본 도메인 ("추출 결과 찾을 수 없음")
+ *   - 401/403 → 인증·권한 안내
+ *   - 409 → 서버 메시지 우선 (충돌 상세) + 도메인 fallback
+ *   - 그 외 ApiError → 서버 메시지 또는 generic
+ *   - NetworkError / 그 외 → classifyApiError 메시지
  */
 function mutationErrorMessage(error) {
+    // 401 만큼은 401 라벨링이 분류 결과에 직접 안 실리므로(message 만 보존) ApiError 시
+    // status 직접 분기 — 도메인 메시지 매핑이 명확.
     if (error instanceof client_1.ApiError) {
         if (error.status === 404)
             return "대상 추출 결과를 찾을 수 없습니다.";
@@ -68,14 +80,16 @@ function mutationErrorMessage(error) {
         if (error.status === 409)
             return (error.message ||
                 "이미 처리된 추출 결과입니다. 목록을 새로고침한 뒤 다시 시도하세요.");
-        return error.message || "요청 처리 중 오류가 발생했습니다.";
     }
-    if (error instanceof client_1.NetworkError) {
+    // ApiError 가 아닌 케이스 + ApiError 의 그 외 status 는 classifyApiError 위임.
+    const classified = (0, errors_1.classifyApiError)(error, "요청 처리 중 오류가 발생했습니다.");
+    if (classified.code === "network_error") {
         return "네트워크에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.";
     }
-    if (error instanceof Error)
-        return error.message;
-    return "알 수 없는 오류";
+    if (classified.code === "unknown_error") {
+        return "알 수 없는 오류";
+    }
+    return classified.message;
 }
 /**
  * 추출 필드 값을 화면 표시용 문자열로 직렬화.
@@ -138,17 +152,27 @@ const _UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[
  *
  * 허용되지 않는 값(정규식 불일치, 음수 page 등)은 조용히 기본값으로 대체하고
  * throw 하지 않는다 — URL 오염에 대해 UI 가 5xx/에러 배너를 내지 않도록.
+ *
+ * 도서관 §1.2c (G-Carry, 2026-04-25): documentType/scopeProfileId/page 는
+ * `parseListFilterParams` + readers 위에서 재구성. status 만 bespoke sentinel
+ * (null vs "" vs valid 3구분) 시맨틱을 유지해 직접 분기.
  */
 function parseFiltersFromUrl(sp) {
+    // documentType / scopeProfileId / page 는 일반 reader 로 표현 가능.
+    const { documentType, scopeProfileId, page } = (0, url_1.parseListFilterParams)(sp, {
+        documentType: url_1.filterReaders.regexString(URL_PARAM_TYPE, _DOC_TYPE_RE, {
+            normalize: (s) => s.toUpperCase(),
+        }),
+        scopeProfileId: url_1.filterReaders.regexString(URL_PARAM_SCOPE, _UUID_RE),
+        page: url_1.filterReaders.boundedInt(URL_PARAM_PAGE, {
+            min: 1,
+            max: 10_000,
+            fallback: 1,
+        }),
+    });
+    // status 는 "키 부재(null) → 기본값" 과 "status= (빈 문자열) → 사용자 명시 '전체'"
+    // 의 3구분 시맨틱이라 일반 enum reader 로는 표현 어려움 — bespoke 유지.
     const rawStatus = sp.get(URL_PARAM_STATUS); // null | "" | "…"
-    const rawType = sp.get(URL_PARAM_TYPE) ?? "";
-    const rawScope = sp.get(URL_PARAM_SCOPE) ?? "";
-    const rawPage = sp.get(URL_PARAM_PAGE) ?? "";
-    // status:
-    //   - 키 자체가 없음(null) → 기본값(pending_review)
-    //   - status= (빈 문자열) → 사용자 명시적 "전체" 선택 → ""
-    //   - status=허용값 → 그 값
-    //   - status=알 수 없는 값 → 기본값 fallback
     let status;
     if (rawStatus === null) {
         status = exports.DEFAULT_QUEUE_FILTERS.status;
@@ -161,24 +185,6 @@ function parseFiltersFromUrl(sp) {
     }
     else {
         status = exports.DEFAULT_QUEUE_FILTERS.status;
-    }
-    // document_type: 서버 정규식과 동일한 형태만 허용 (CHECK 위반 / SQLi 방어).
-    let documentType = "";
-    if (rawType && _DOC_TYPE_RE.test(rawType.toUpperCase())) {
-        documentType = rawType.toUpperCase();
-    }
-    // scope_profile_id: UUID 형태만 허용.
-    let scopeProfileId = "";
-    if (rawScope && _UUID_RE.test(rawScope)) {
-        scopeProfileId = rawScope;
-    }
-    // page: 양수 정수만. 10000 초과도 서버 상한과 동일하게 clamp.
-    let page = 1;
-    if (rawPage) {
-        const parsed = Number.parseInt(rawPage, 10);
-        if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 10_000) {
-            page = parsed;
-        }
     }
     return { status, documentType, scopeProfileId, page };
 }
@@ -231,7 +237,7 @@ exports.REJECT_REASON_MIN_LENGTH_WHEN_PRESENT = 3;
  * 이 함수는 React 의존성이 없어 node:test 로 단위 커버 가능하다.
  */
 function validateRejectReason(raw) {
-    const text = typeof raw === "string" ? raw : "";
+    const text = (0, guards_1.isString)(raw) ? raw : "";
     const trimmed = text.trim();
     const remaining = exports.REJECT_REASON_MAX_LENGTH - text.length;
     // 빈 값은 허용. 서버에서 None 정규화.

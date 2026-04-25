@@ -12,6 +12,10 @@
 
 import { useState, useEffect } from "react";
 
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
+
+const SEARCH_DEBOUNCE_MS = 500;
+
 interface SearchBoxProps {
   value: string;
   onChange: (query: string) => void;
@@ -25,17 +29,33 @@ export default function SearchBox({
 }: SearchBoxProps) {
   const [input, setInput] = useState(value);
 
+  // 부모 value 변경 시 입력 동기화 (외부 reset 등)
   useEffect(() => {
     setInput(value);
   }, [value]);
 
-  // debounce 500ms
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (input !== value) onChange(input);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [input, onChange, value]);
+  // 입력 디바운스 — 마지막 입력 후 SEARCH_DEBOUNCE_MS 경과 시 onChange 1회
+  // (docs/함수도서관 §1.6a `useDebouncedCallback` 적용)
+  const [debouncedOnChange, flushOnChange, cancelOnChange] = useDebouncedCallback(
+    onChange,
+    SEARCH_DEBOUNCE_MS,
+  );
+
+  const handleInputChange = (next: string) => {
+    setInput(next);
+    if (next !== value) {
+      debouncedOnChange(next);
+    } else {
+      // 부모 value 와 같아지면 보류된 호출 의미가 사라지므로 취소
+      cancelOnChange();
+    }
+  };
+
+  const handleClear = () => {
+    setInput("");
+    cancelOnChange();
+    onChange("");
+  };
 
   return (
     <div role="search" className="px-3 py-2 border-b border-gray-100">
@@ -49,14 +69,15 @@ export default function SearchBox({
         <input
           type="search"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onBlur={() => flushOnChange()}
           placeholder={placeholder}
           className="w-full text-xs pl-7 pr-6 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-200 bg-gray-50 placeholder-gray-400 transition-colors"
           aria-label="대화 검색"
         />
         {input && (
           <button
-            onClick={() => { setInput(""); onChange(""); }}
+            onClick={handleClear}
             className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-400 rounded"
             aria-label="검색어 지우기"
             type="button"

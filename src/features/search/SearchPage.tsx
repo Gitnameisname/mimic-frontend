@@ -19,6 +19,10 @@ import { EmptyState } from "@/components/feedback/EmptyState";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { PageHeader } from "@/components/page/PageHeader";
 import { relativeTime } from "@/lib/utils";
+import { parseListFilterParams, filterReaders, mutateSearchParams } from "@/lib/utils/url";
+// S3 Phase 2 FG 2-1 UX 6차 (2026-04-24): 컬렉션/폴더 필터 드롭다운용 훅
+import { useCollections as _useCollections } from "@/features/explore/hooks/useCollections";
+import { useFolders as _useFolders } from "@/features/explore/hooks/useFolders";
 
 // ---------------------------------------------------------------------------
 // 스니펫 하이라이팅 렌더러 (<b>...</b> → <mark>)
@@ -177,10 +181,25 @@ const STATUS_OPTIONS = [
   { value: "archived", label: "보관됨" },
 ];
 
+// 도서관 §1.2b (2026-04-25): URL → state 동기화 schema. 초기 파싱과 useEffect
+// 안의 변경 감지 양쪽이 같은 스키마를 공유하도록 모듈 상수로 추출.
+const URL_FILTERS_SCHEMA = {
+  q: filterReaders.string("q", ""),
+  collection: filterReaders.optionalString("collection"),
+  folder: filterReaders.optionalString("folder"),
+  include_subfolders: filterReaders.bool("include_subfolders"),
+} as const;
+
 export function SearchPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const initialQ = searchParams.get("q") ?? "";
+  // S3 Phase 2 FG 2-1 UX 6차 (2026-04-24): 컬렉션/폴더 맥락을 /search 에도 지원
+  const {
+    q: initialQ,
+    collection: initialCollection,
+    folder: initialFolder,
+    include_subfolders: initialIncludeSub,
+  } = parseListFilterParams(searchParams, URL_FILTERS_SCHEMA);
 
   const [tab, setTab] = useState<Tab>("documents");
   const [inputValue, setInputValue] = useState(initialQ);
@@ -189,7 +208,14 @@ export function SearchPage() {
     sort: "relevance",
     page: 1,
     limit: 20,
+    collection: initialCollection,
+    folder: initialFolder,
+    include_subfolders: initialIncludeSub || undefined,
   });
+
+  // 탐색 트리 데이터 (컬렉션/폴더 드롭다운용). 사이드바와 동일 캐시 공유.
+  const { data: collections } = _useCollections();
+  const { data: folders } = _useFolders();
 
   // DocumentType 목록 동적 로드 (CLAUDE.md: 문서 타입 하드코딩 금지)
   const { data: filterOptions } = useQuery({
@@ -212,13 +238,37 @@ export function SearchPage() {
   //   주석으로 명시하고 disable 처리. (대안: router state 에서 derived value 로
   //   전환하는 추가 리팩터는 별건으로 진행)
   const prevQ = useRef(initialQ);
+  const prevCollection = useRef(initialCollection);
+  const prevFolder = useRef(initialFolder);
+  const prevIncludeSub = useRef(initialIncludeSub);
   useEffect(() => {
-    const q = searchParams.get("q") ?? "";
-    if (q !== prevQ.current) {
+    // 도서관 §1.2b (2026-04-25): 초기 파싱과 동일한 schema 를 공유.
+    const {
+      q,
+      collection: coll,
+      folder: fold,
+      include_subfolders: inc,
+    } = parseListFilterParams(searchParams, URL_FILTERS_SCHEMA);
+    const changed =
+      q !== prevQ.current ||
+      coll !== prevCollection.current ||
+      fold !== prevFolder.current ||
+      inc !== prevIncludeSub.current;
+    if (changed) {
       prevQ.current = q;
+      prevCollection.current = coll;
+      prevFolder.current = fold;
+      prevIncludeSub.current = inc;
       /* eslint-disable react-hooks/set-state-in-effect -- URL(외부) → state 동기화. */
       setInputValue(q);
-      setParams((prev) => ({ ...prev, q, page: 1 }));
+      setParams((prev) => ({
+        ...prev,
+        q,
+        collection: coll,
+        folder: fold,
+        include_subfolders: inc || undefined,
+        page: 1,
+      }));
       setTab("documents");
       /* eslint-enable react-hooks/set-state-in-effect */
     }
@@ -229,9 +279,12 @@ export function SearchPage() {
       e.preventDefault();
       const q = inputValue.trim();
       if (!q) return;
-      router.push(`/search?q=${encodeURIComponent(q)}`);
+      // collection/folder/include_subfolders 현재 URL 상태를 보존하며 q 만 갱신
+      // 도서관 §1.2c (2026-04-25): mutateSearchParams 로 cloning + set 표준화.
+      const qs = mutateSearchParams(searchParams, { q });
+      router.push(`/search${qs}`);
     },
-    [inputValue, router]
+    [inputValue, router, searchParams]
   );
 
   // 문서 검색 쿼리
@@ -351,10 +404,77 @@ export function SearchPage() {
               ))}
             </select>
 
+            {/* S3 Phase 2 FG 2-1 UX 6차 (2026-04-24): 컬렉션 / 폴더 필터 — /documents 와 동일 규약 */}
+            <select
+              aria-label="컬렉션 필터"
+              value={params.collection ?? ""}
+              onChange={(e) =>
+                setParams((p) => ({ ...p, collection: e.target.value || undefined, page: 1 }))
+              }
+              className="text-sm border border-gray-200 rounded-md px-2.5 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">전체 컬렉션</option>
+              {collections?.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              aria-label="폴더 필터"
+              value={params.folder ?? ""}
+              onChange={(e) =>
+                setParams((p) => ({
+                  ...p,
+                  folder: e.target.value || undefined,
+                  // 폴더를 해제하면 include_subfolders 도 해제
+                  include_subfolders: e.target.value ? p.include_subfolders : undefined,
+                  page: 1,
+                }))
+              }
+              className="text-sm border border-gray-200 rounded-md px-2.5 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">전체 폴더</option>
+              {folders?.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.path.split("/").filter(Boolean).join(" › ")}
+                </option>
+              ))}
+            </select>
+
+            {params.folder && (
+              <label className="inline-flex items-center gap-1.5 text-xs text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={!!params.include_subfolders}
+                  onChange={(e) =>
+                    setParams((p) => ({
+                      ...p,
+                      include_subfolders: e.target.checked || undefined,
+                      page: 1,
+                    }))
+                  }
+                  className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>하위 폴더 포함</span>
+              </label>
+            )}
+
             {/* 활성 필터 칩 */}
-            {(params.type || params.status) && (
+            {(params.type || params.status || params.collection || params.folder) && (
               <button
-                onClick={() => setParams((p) => ({ ...p, type: undefined, status: undefined, page: 1 }))}
+                onClick={() =>
+                  setParams((p) => ({
+                    ...p,
+                    type: undefined,
+                    status: undefined,
+                    collection: undefined,
+                    folder: undefined,
+                    include_subfolders: undefined,
+                    page: 1,
+                  }))
+                }
                 className="text-xs text-gray-500 hover:text-red-500 flex items-center gap-1 transition-colors"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

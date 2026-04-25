@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { QueryLoader } from "@/components/feedback/QueryLoader";
 import type { SchemaField, DocTypePluginStatus } from "@/types/admin";
+import { formatDateOnly } from "@/lib/utils/date";
 
 interface Props {
   typeCode: string;
@@ -592,7 +593,7 @@ export function AdminDocTypeDetailPage({ typeCode }: Props) {
           </span>
           {dt.created_at && (
             <span>
-              생성일 <strong className="text-gray-800">{new Date(dt.created_at).toLocaleDateString("ko")}</strong>
+              생성일 <strong className="text-gray-800">{formatDateOnly(dt.created_at)}</strong>
             </span>
           )}
         </div>

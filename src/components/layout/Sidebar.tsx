@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useUiStore } from "@/stores/uiStore";
 import { cn } from "@/lib/utils";
 import { SidebarUserPanel } from "./SidebarUserPanel";
+import { SidebarExploreTree } from "@/features/explore/SidebarExploreTree";
 
 type NavItem = {
   href: string;
@@ -131,6 +132,8 @@ export function Sidebar() {
           )}
         >
           <SidebarNav pathname={pathname} compact={false} />
+          {/* S3 Phase 2 FG 2-1: 탐색 섹션 (컬렉션 + 폴더) */}
+          <SidebarExploreTree compact={false} />
           <SidebarUserPanel compact={false} />
         </aside>
       </>
@@ -147,6 +150,8 @@ export function Sidebar() {
       )}
     >
       <SidebarNav pathname={pathname} compact={collapsed} />
+      {/* S3 Phase 2 FG 2-1: 탐색 섹션 (컬렉션 + 폴더) */}
+      <SidebarExploreTree compact={collapsed} />
       <SidebarUserPanel compact={collapsed} />
     </aside>
   );
@@ -154,7 +159,8 @@ export function Sidebar() {
 
 function SidebarNav({ pathname, compact }: { pathname: string; compact: boolean }) {
   return (
-    <nav className="flex-1 py-3 px-2 space-y-1">
+    // S3 Phase 2 FG 2-1: 하단에 탐색 섹션이 추가되면서 flex-1 제거. content size 기반.
+    <nav className="shrink-0 py-3 px-2 space-y-1">
       {NAV_ITEMS.map((item) => {
         const active = pathname.startsWith(item.href);
         return (

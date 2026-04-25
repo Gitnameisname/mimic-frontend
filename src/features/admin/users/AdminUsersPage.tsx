@@ -11,6 +11,7 @@ import { Modal, ModalActions } from "@/components/feedback/Modal";
 import { FormField } from "@/components/form/FormField";
 import { useMutationWithToast } from "@/hooks/useMutationWithToast";
 import type { AdminUser } from "@/types/admin";
+import { formatDateOnly } from "@/lib/utils/date";
 
 const ROLES = ["VIEWER", "AUTHOR", "REVIEWER", "APPROVER", "ORG_ADMIN", "SUPER_ADMIN"] as const;
 
@@ -158,12 +159,12 @@ export function AdminUsersPage() {
       key: "last_login_at",
       header: "마지막 로그인",
       render: (row) =>
-        row.last_login_at ? new Date(row.last_login_at).toLocaleDateString("ko") : "-",
+        formatDateOnly(row.last_login_at),
     },
     {
       key: "created_at",
       header: "가입일",
-      render: (row) => new Date(row.created_at).toLocaleDateString("ko"),
+      render: (row) => formatDateOnly(row.created_at),
     },
   ];
 

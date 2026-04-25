@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { accountApi, type SessionData } from "@/lib/api/account";
 import { Button } from "@/components/button/Button";
 import { cn } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils/date";
 
 /**
  * User-Agent에서 간단한 브라우저/OS 정보를 추출한다.
@@ -31,18 +32,6 @@ function parseUserAgent(ua: string | null): string {
   else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
 
   return os ? `${browser} · ${os}` : browser;
-}
-
-function formatDate(iso: string): string {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  return d.toLocaleString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 export default function SessionsPage() {
@@ -152,7 +141,7 @@ export default function SessionsPage() {
                       <span aria-hidden="true" className="hidden sm:inline">·</span>
                     )}
                     {session.created_at && (
-                      <span className="whitespace-nowrap" title={formatDate(session.created_at)}>{formatDate(session.created_at)}</span>
+                      <span className="whitespace-nowrap" title={formatDateTime(session.created_at)}>{formatDateTime(session.created_at)}</span>
                     )}
                   </div>
                 </div>

@@ -7,6 +7,7 @@ import { adminApi } from "@/lib/api/admin";
 import { StatusBadge, SeverityBadge } from "@/components/admin/StatusBadge";
 import { QueryLoader } from "@/components/feedback/QueryLoader";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatDateOnly } from "@/lib/utils/date";
 
 interface Props {
   userId: string;
@@ -275,8 +276,8 @@ export function AdminUserDetailPage({ userId }: Props) {
             label="마지막 로그인"
             value={user.last_login_at ? new Date(user.last_login_at).toLocaleString("ko") : "-"}
           />
-          <InfoItem label="가입일" value={new Date(user.created_at).toLocaleDateString("ko")} />
-          <InfoItem label="최근 수정" value={new Date(user.updated_at).toLocaleDateString("ko")} />
+          <InfoItem label="가입일" value={formatDateOnly(user.created_at)} />
+          <InfoItem label="최근 수정" value={formatDateOnly(user.updated_at)} />
         </div>
       </div>
 
@@ -313,7 +314,7 @@ export function AdminUserDetailPage({ userId }: Props) {
                     </span>
                   </td>
                   <td className="px-4 py-2.5 text-gray-500">
-                    {new Date(or.joined_at).toLocaleDateString("ko")}
+                    {formatDateOnly(or.joined_at)}
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     <button

@@ -29,6 +29,7 @@ import type {
   ExtractionSchemaField,
   ExtractionFieldType,
 } from "@/types/s2admin";
+import { isString } from "@/lib/utils/guards";
 
 // ───────────────────────────────────────────────────────────
 // 공용 유틸
@@ -63,7 +64,7 @@ function tryParseJson(raw: string): unknown {
 /** unknown → 입력창 표시용 문자열 (undefined 면 빈 문자열). */
 function toInputString(v: unknown): string {
   if (v === undefined || v === null) return "";
-  if (typeof v === "string") return v;
+  if (isString(v)) return v;
   try {
     return JSON.stringify(v);
   } catch {
@@ -187,15 +188,15 @@ function DefaultValueWidget({
     if (value === undefined || value === null) return null;
     switch (ft) {
       case "string":
-        return typeof value === "string" ? null : "string 타입과 호환되지 않음";
+        return isString(value) ? null : "string 타입과 호환되지 않음";
       case "number":
         return typeof value === "number" ? null : "number 타입과 호환되지 않음";
       case "boolean":
         return typeof value === "boolean" ? null : "boolean 타입과 호환되지 않음";
       case "date":
-        return typeof value === "string" ? null : "date 타입은 문자열(YYYY-MM-DD)이어야 함";
+        return isString(value) ? null : "date 타입은 문자열(YYYY-MM-DD)이어야 함";
       case "enum":
-        return typeof value === "string" ? null : "enum 타입과 호환되지 않음";
+        return isString(value) ? null : "enum 타입과 호환되지 않음";
       case "array":
         return Array.isArray(value) ? null : "array 타입과 호환되지 않음";
       case "object":
@@ -259,7 +260,7 @@ function DefaultValueWidget({
       break;
     }
     case "date": {
-      const dateStr = typeof value === "string" ? value : "";
+      const dateStr = isString(value) ? value : "";
       input = (
         <input
           id={id}
@@ -277,7 +278,7 @@ function DefaultValueWidget({
     }
     case "enum": {
       const options = field.enum_values ?? [];
-      const str = typeof value === "string" ? value : "";
+      const str = isString(value) ? value : "";
       input = (
         <select
           id={id}
@@ -310,7 +311,7 @@ function DefaultValueWidget({
       break;
     }
     case "string": {
-      const str = typeof value === "string" ? value : "";
+      const str = isString(value) ? value : "";
       input = (
         <input
           id={id}

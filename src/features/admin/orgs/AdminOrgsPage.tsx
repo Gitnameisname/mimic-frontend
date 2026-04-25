@@ -11,6 +11,7 @@ import { FormField } from "@/components/form/FormField";
 import { useMutationWithToast } from "@/hooks/useMutationWithToast";
 import type { AdminOrg, AdminOrgDetail, OrgMember } from "@/types/admin";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatDateOnly } from "@/lib/utils/date";
 
 // ---- 생성 모달 ----
 
@@ -138,7 +139,7 @@ function OrgDetailPanel({
     {
       key: "joined_at",
       header: "합류일",
-      render: (m) => new Date(m.joined_at).toLocaleDateString("ko"),
+      render: (m) => formatDateOnly(m.joined_at),
     },
   ];
 
@@ -230,7 +231,7 @@ function OrgDetailPanel({
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-0.5">생성일</p>
-                <p className="text-gray-700">{new Date(org.created_at).toLocaleDateString("ko")}</p>
+                <p className="text-gray-700">{formatDateOnly(org.created_at)}</p>
               </div>
             </div>
 
@@ -344,7 +345,7 @@ export function AdminOrgsPage() {
     {
       key: "created_at",
       header: "생성일",
-      render: (row) => new Date(row.created_at).toLocaleDateString("ko"),
+      render: (row) => formatDateOnly(row.created_at),
     },
   ];
 

@@ -10,6 +10,7 @@
  */
 
 import { useAuthzStore } from "@/hooks/useAuthz";
+import { isString } from "@/lib/utils/guards";
 import {
   getAccessToken,
   attemptSilentRefreshForInterceptor,
@@ -203,7 +204,7 @@ async function request<T>(
 
     if (structured?.error?.message) {
       message = structured.error.message;
-    } else if (typeof structured?.detail === "string") {
+    } else if (isString(structured?.detail)) {
       message = structured.detail;
     } else if (
       structured?.detail &&
@@ -216,17 +217,17 @@ async function request<T>(
         message?: string;
         hint?: { href?: string; label?: string };
       };
-      if (!code && typeof d.code === "string") {
+      if (!code && isString(d.code)) {
         code = d.code;
       }
-      if (typeof d.message === "string") {
+      if (isString(d.message)) {
         message = d.message;
       }
       if (
         d.hint &&
         typeof d.hint === "object" &&
-        typeof d.hint.href === "string" &&
-        typeof d.hint.label === "string"
+        isString(d.hint.href) &&
+        isString(d.hint.label)
       ) {
         hint = { href: d.hint.href, label: d.hint.label };
       }

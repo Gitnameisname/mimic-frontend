@@ -248,7 +248,7 @@ export function VectorizationPanel({ documentId, compact = false }: Props) {
       <ConfirmDialog
         open={confirmOpen}
         title="이 문서를 재벡터화합니다"
-        description={`현재 상태: ${display.label}. RAG 가 이 문서를 찾지 못하거나 최신 내용이 반영되지 않을 때 실행하세요. 완료까지 수 분 소요될 수 있습니다.`}
+        message={`현재 상태: ${display.label}. RAG 가 이 문서를 찾지 못하거나 최신 내용이 반영되지 않을 때 실행하세요. 완료까지 수 분 소요될 수 있습니다.`}
         confirmLabel="재벡터화 실행"
         cancelLabel="취소"
         onConfirm={() => reindexMutation.mutate()}

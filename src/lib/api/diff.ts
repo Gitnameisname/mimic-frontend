@@ -1,3 +1,4 @@
+import { toQueryString } from "@/lib/utils/url";
 import { api } from "./client";
 import type { DiffResult, DiffSummaryResponse } from "@/types/diff";
 
@@ -13,10 +14,11 @@ export const diffApi = {
     v2Id: string,
     options?: { inline_diff?: boolean; include_unchanged?: boolean }
   ) => {
-    const params = new URLSearchParams();
-    if (options?.inline_diff) params.set("inline_diff", "true");
-    if (options?.include_unchanged) params.set("include_unchanged", "true");
-    const qs = params.toString() ? `?${params}` : "";
+    // 기존 시맨틱 보존: truthy 일 때만 emit (false/omit 둘 다 backend 기본값에 위임).
+    const qs = toQueryString({
+      inline_diff: options?.inline_diff || undefined,
+      include_unchanged: options?.include_unchanged || undefined,
+    });
     return api
       .get<{ data: DiffResult }>(
         `/api/v1/documents/${documentId}/versions/${v1Id}/diff/${v2Id}${qs}`
@@ -30,9 +32,7 @@ export const diffApi = {
     versionId: string,
     options?: { inline_diff?: boolean }
   ) => {
-    const params = new URLSearchParams();
-    if (options?.inline_diff) params.set("inline_diff", "true");
-    const qs = params.toString() ? `?${params}` : "";
+    const qs = toQueryString({ inline_diff: options?.inline_diff || undefined });
     return api
       .get<{ data: DiffResult }>(
         `/api/v1/documents/${documentId}/versions/${versionId}/diff${qs}`

@@ -1,5 +1,5 @@
 import { api } from "./client";
-import { buildQueryString } from "@/lib/utils";
+import { toQueryString } from "@/lib/utils/url";
 import type {
   DashboardMetrics,
   DashboardHealth,
@@ -43,7 +43,7 @@ import type {
   CronPreviewResponse,
 } from "@/types/admin";
 
-// buildQueryString은 @/lib/utils에서 import
+// toQueryString 은 @/lib/utils/url 에서 import (도서관 §1.2c, 2026-04-25 일괄 마이그레이션)
 
 // ---- Dashboard ----
 
@@ -75,7 +75,7 @@ export const adminApi = {
     role?: string;
   } = {}) =>
     api.get<ListResponse<AdminUser>>(
-      `/api/v1/admin/users${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 20, search: params.search, status: params.status, role: params.role })}`
+      `/api/v1/admin/users${toQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 20, search: params.search, status: params.status, role: params.role })}`
     ),
   getUser: (userId: string) =>
     api.get<SingleResponse<AdminUserDetail>>(
@@ -109,7 +109,7 @@ export const adminApi = {
   // Organizations
   getOrgs: (params: { page?: number; page_size?: number; search?: string } = {}) =>
     api.get<ListResponse<AdminOrg>>(
-      `/api/v1/admin/organizations${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 20, search: params.search })}`
+      `/api/v1/admin/organizations${toQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 20, search: params.search })}`
     ),
   getOrg: (orgId: string) =>
     api.get<SingleResponse<AdminOrgDetail>>(
@@ -187,7 +187,7 @@ export const adminApi = {
     result?: string;
   } = {}) =>
     api.get<ListResponse<AuditLog>>(
-      `/api/v1/admin/audit-logs${buildQueryString({
+      `/api/v1/admin/audit-logs${toQueryString({
         page: params.page ?? 1,
         page_size: params.page_size ?? 50,
         from: params.from,
@@ -205,7 +205,7 @@ export const adminApi = {
   // Document Types
   getDocumentTypes: (params: { status?: string; search?: string } = {}) =>
     api.get<ListResponse<AdminDocumentType>>(
-      `/api/v1/admin/document-types${buildQueryString({ status: params.status, search: params.search })}`
+      `/api/v1/admin/document-types${toQueryString({ status: params.status, search: params.search })}`
     ),
   getDocumentType: (typeCode: string) =>
     api.get<SingleResponse<AdminDocumentTypeDetail>>(
@@ -275,7 +275,7 @@ export const adminApi = {
     job_type?: string;
   } = {}) =>
     api.get<ListResponse<BackgroundJob>>(
-      `/api/v1/admin/jobs${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 30, status: params.status, job_type: params.job_type })}`
+      `/api/v1/admin/jobs${toQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 30, status: params.status, job_type: params.job_type })}`
     ),
   getJobSummary: () =>
     api.get<SingleResponse<JobSummary>>(
@@ -289,13 +289,13 @@ export const adminApi = {
   // Indexing
   getIndexingJobs: (params: { page?: number; page_size?: number; status?: string } = {}) =>
     api.get<ListResponse<BackgroundJob>>(
-      `/api/v1/admin/indexing/jobs${buildQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 30, status: params.status })}`
+      `/api/v1/admin/indexing/jobs${toQueryString({ page: params.page ?? 1, page_size: params.page_size ?? 30, status: params.status })}`
     ),
 
   // API Keys
   getApiKeys: (params: { page?: number; page_size?: number; status?: string; search?: string } = {}) =>
     api.get<ListResponse<ApiKey>>(
-      `/api/v1/admin/api-keys${buildQueryString({
+      `/api/v1/admin/api-keys${toQueryString({
         page: params.page ?? 1,
         page_size: params.page_size ?? 20,
         status: params.status,
@@ -337,7 +337,7 @@ export const adminApi = {
     has_embedding?: boolean;
   } = {}) =>
     api.get<SingleResponse<ChunkListResponse>>(
-      `/api/v1/vectorization/chunks${buildQueryString({
+      `/api/v1/vectorization/chunks${toQueryString({
         page: params.page ?? 1,
         limit: params.limit ?? 20,
         document_id: params.document_id,
@@ -363,7 +363,7 @@ export const adminApi = {
     ),
   getTokenUsage: (params: { page?: number; limit?: number } = {}) =>
     api.get<SingleResponse<TokenUsageListResponse>>(
-      `/api/v1/vectorization/token-usage${buildQueryString({ page: params.page ?? 1, limit: params.limit ?? 20 })}`
+      `/api/v1/vectorization/token-usage${toQueryString({ page: params.page ?? 1, limit: params.limit ?? 20 })}`
     ),
 
   // Alerts (Phase 14-13)
@@ -373,7 +373,7 @@ export const adminApi = {
     ),
   getAlertRules: (enabledOnly = false) =>
     api.get<SingleResponse<AlertRule[]>>(
-      `/api/v1/admin/alerts/rules${buildQueryString({ enabled_only: enabledOnly })}`
+      `/api/v1/admin/alerts/rules${toQueryString({ enabled_only: enabledOnly })}`
     ),
   getAlertRule: (ruleId: string) =>
     api.get<SingleResponse<AlertRule>>(
@@ -423,7 +423,7 @@ export const adminApi = {
     page_size?: number;
   } = {}) =>
     api.get<SingleResponse<AlertHistoryResponse>>(
-      `/api/v1/admin/alerts/history${buildQueryString({
+      `/api/v1/admin/alerts/history${toQueryString({
         status: params.status,
         severity: params.severity,
         from: params.from,

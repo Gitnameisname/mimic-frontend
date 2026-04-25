@@ -31,31 +31,16 @@ exports.EXTRACTION_STATUS_VALUES = [
     exports.EXTRACTION_STATUS.REJECTED,
 ];
 /**
- * 상태별 한글 라벨.
+ * 상태별 한글 라벨 / 배지 className.
  *
- * 기본적으로 `ExtractionResult["status"]` 의 모든 멤버를 다뤄야 하며, 타입상
- * Record 로 선언해 신규 상태 추가 시 컴파일 에러로 강제한다.
+ * 도서관 §1.7 FE-G3 (2026-04-25): 정의 위치를 `@/lib/constants/labels/extraction.ts`
+ * 와 `@/lib/constants/badges/extraction.ts` 로 이전. 본 모듈은 thin re-export 로
+ * 외부 import 호환을 보존한다 (기존 import path 그대로 유효).
  */
-exports.EXTRACTION_STATUS_LABELS = {
-    pending_review: "검토 대기",
-    approved: "승인",
-    rejected: "반려",
-};
-/**
- * 상태별 배지 Tailwind 클래스.
- *
- * 색상 정책:
- *   - pending_review: amber (주의/대기)
- *   - approved:       green (완료/긍정)
- *   - rejected:       red   (차단/부정)
- *
- * 대비비 4.5:1 이상을 만족하는 -100/-800 조합을 사용 (WCAG AA).
- */
-exports.EXTRACTION_STATUS_BADGE_CLASSES = {
-    pending_review: "bg-amber-100 text-amber-800",
-    approved: "bg-green-100 text-green-800",
-    rejected: "bg-red-100 text-red-800",
-};
+var extraction_1 = require("@/lib/constants/labels/extraction");
+Object.defineProperty(exports, "EXTRACTION_STATUS_LABELS", { enumerable: true, get: function () { return extraction_1.EXTRACTION_STATUS_LABELS; } });
+var extraction_2 = require("@/lib/constants/badges/extraction");
+Object.defineProperty(exports, "EXTRACTION_STATUS_BADGE_CLASSES", { enumerable: true, get: function () { return extraction_2.EXTRACTION_STATUS_BADGE_CLASSES; } });
 /**
  * status 파라미터 유효성 검사.
  *

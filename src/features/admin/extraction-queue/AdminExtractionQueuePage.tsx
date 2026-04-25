@@ -17,6 +17,7 @@ import { adminApi } from "@/lib/api/admin";
 import type { ExtractionResult, ExtractionResultDetail } from "@/types/s2admin";
 import type { AdminDocumentType } from "@/types/admin";
 import { cn } from "@/lib/utils";
+import { BADGE_BASE } from "@/lib/styles/tokens";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { normalizeDocTypeCode } from "@/features/admin/extraction-schemas/docTypeNormalize";
 
@@ -83,10 +84,7 @@ function NoticeBanner({ children }: { children: ReactNode }) {
 function StatusBadge({ status }: { status: ExtractionResult["status"] }) {
   return (
     <span
-      className={cn(
-        "inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold",
-        EXTRACTION_STATUS_BADGE_CLASSES[status],
-      )}
+      className={cn(BADGE_BASE, EXTRACTION_STATUS_BADGE_CLASSES[status])}
     >
       {EXTRACTION_STATUS_LABELS[status]}
     </span>

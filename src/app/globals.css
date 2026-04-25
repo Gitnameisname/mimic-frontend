@@ -68,6 +68,85 @@
   --background: var(--color-surface);
   --foreground: var(--color-text);
   --ring: var(--color-brand-500);
+  /* 경고/위험 톤 (다크에서도 살아있어야 함) */
+  --color-danger-50: #fef2f2;
+  --color-danger-600: #dc2626;
+  --color-success-600: #16a34a;
+  /* 하이라이트 플래시 — Inline chip → 본문 점프 시 일시 배경 */
+  --color-tag-flash: rgba(59, 130, 246, 0.35);
+}
+
+/* =============================================================
+   다크모드 — S3 Phase 2 FG 2-2 UX 다듬기 1차 (2026-04-25)
+   우선순위:
+     1) `:root[data-theme="dark"]`  = 사용자 강제 다크
+     2) `:root[data-theme="light"]` = 사용자 강제 라이트 (아래 기본이 라이트라 no-op)
+     3) `prefers-color-scheme: dark` + data-theme 미설정 또는 "system" = 시스템 추종
+   ============================================================= */
+
+/* (1) 강제 다크 */
+:root[data-theme="dark"] {
+  --color-surface: #0f172a;
+  --color-surface-muted: #111827;
+  --color-surface-subtle: #1f2937;
+  --color-surface-strong: #334155;
+  --color-border: #27364a;
+  --color-border-strong: #3f5166;
+  --color-text: #e2e8f0;
+  --color-text-muted: #94a3b8;
+  --color-text-subtle: #64748b;
+  --background: #0b1220;
+  --foreground: var(--color-text);
+  /* 브랜드 톤은 다크 배경에서 한 단계 밝게 보이도록 라이트 계열로 shift */
+  --color-brand-50: #172554;
+  --color-brand-100: #1e3a8a;
+  --color-brand-200: #1e40af;
+  --color-brand-300: #1d4ed8;
+  --color-brand-400: #2563eb;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #60a5fa;
+  --color-brand-700: #93c5fd;
+  --color-brand-800: #bfdbfe;
+  --color-brand-900: #dbeafe;
+  --color-tag-flash: rgba(96, 165, 250, 0.45);
+  /* shadow 는 다크에선 덜 보이므로 강조 */
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.5),
+                 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-pop:  0 6px 20px rgba(0, 0, 0, 0.55),
+                 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* (3) 시스템 추종 — data-theme 미설정 또는 "system" 인 경우에만 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]),
+  :root[data-theme="system"] {
+    --color-surface: #0f172a;
+    --color-surface-muted: #111827;
+    --color-surface-subtle: #1f2937;
+    --color-surface-strong: #334155;
+    --color-border: #27364a;
+    --color-border-strong: #3f5166;
+    --color-text: #e2e8f0;
+    --color-text-muted: #94a3b8;
+    --color-text-subtle: #64748b;
+    --background: #0b1220;
+    --foreground: var(--color-text);
+    --color-brand-50: #172554;
+    --color-brand-100: #1e3a8a;
+    --color-brand-200: #1e40af;
+    --color-brand-300: #1d4ed8;
+    --color-brand-400: #2563eb;
+    --color-brand-500: #3b82f6;
+    --color-brand-600: #60a5fa;
+    --color-brand-700: #93c5fd;
+    --color-brand-800: #bfdbfe;
+    --color-brand-900: #dbeafe;
+    --color-tag-flash: rgba(96, 165, 250, 0.45);
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.5),
+                   0 1px 3px rgba(0, 0, 0, 0.35);
+    --shadow-pop:  0 6px 20px rgba(0, 0, 0, 0.55),
+                   0 2px 6px rgba(0, 0, 0, 0.35);
+  }
 }
 
 html,
@@ -193,4 +272,168 @@ body {
     .doc-grid > [data-col="type"],
     .doc-grid > [data-col="updated"] { display: none; }
   }
+}
+
+/* =============================================================
+   Mimir Editor (Phase 1 FG 1-2)
+   ① 블록 뷰 / 일반 뷰 토글 — 같은 ProseMirror doc 을 다르게 렌더
+   ② 저장 모델은 단일 (content_snapshot) — S1 ③ + FG 1-1 원칙
+   ③ node_id stable 은 NodeId extension 이 담당 (CSS 무관)
+   ============================================================= */
+.mimir-editor .ProseMirror {
+  outline: none;
+  min-height: 20rem;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--color-text);
+}
+
+.mimir-editor .ProseMirror:focus {
+  outline: none;
+}
+
+.mimir-editor .ProseMirror h1,
+.mimir-editor .ProseMirror h2,
+.mimir-editor .ProseMirror h3 {
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.mimir-editor .ProseMirror h1 { font-size: 1.5rem; }
+.mimir-editor .ProseMirror h2 { font-size: 1.25rem; }
+.mimir-editor .ProseMirror h3 { font-size: 1.125rem; }
+
+.mimir-editor .ProseMirror p {
+  margin: 0.5rem 0;
+}
+
+.mimir-editor .ProseMirror ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.mimir-editor .ProseMirror ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.mimir-editor .ProseMirror pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 0.75rem 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8125rem;
+  overflow-x: auto;
+}
+
+.mimir-editor .ProseMirror code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.875em;
+}
+
+/* Placeholder (@tiptap/extension-placeholder) */
+.mimir-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--color-text-subtle);
+  float: left;
+  pointer-events: none;
+  height: 0;
+}
+
+/* --------- 블록 뷰: 각 최상위 블록에 카드 테두리 --------- */
+.mimir-editor--block .ProseMirror > * {
+  position: relative;
+  padding: 0.75rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.mimir-editor--block .ProseMirror > *:hover {
+  border-color: var(--color-border);
+  background: var(--color-surface-muted);
+}
+
+.mimir-editor--block .ProseMirror > *:focus-within {
+  border-color: var(--color-brand-300);
+  background: color-mix(in srgb, var(--color-brand-50) 50%, transparent);
+}
+
+.mimir-editor--block .ProseMirror > * + * {
+  margin-top: 0.5rem;
+}
+
+/* 블록 뷰: 카드 내부 heading 의 자체 상단 여백은 중복되므로 정규화 (UI 리뷰 1차 반영) */
+.mimir-editor--block .ProseMirror > h1,
+.mimir-editor--block .ProseMirror > h2,
+.mimir-editor--block .ProseMirror > h3 {
+  margin-top: 0;
+}
+
+/* --------- 일반 뷰: 흐르는 리치텍스트 (카드 테두리 없음) --------- */
+.mimir-editor--flow .ProseMirror > * {
+  border: none;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.mimir-editor--flow .ProseMirror > *:hover,
+.mimir-editor--flow .ProseMirror > *:focus-within {
+  border: none;
+  background: transparent;
+}
+
+/* =============================================================
+   Hashtag Mark (Phase 2 FG 2-2)
+   에디터 본문 내 `#tag` 시각 강조. 서버 파서가 정본.
+   .tag-pill 은 HashtagMark extension 이 렌더하는 span.
+   ============================================================= */
+.tag-pill {
+  display: inline-block;
+  padding: 0 0.25rem;
+  border-radius: 0.25rem;
+  /* UX1 (2026-04-25): 14% → 22% 로 상향. 다크모드 토큰에서 brand-500 이 유지되어
+     같은 믹싱 비율에서도 대비가 충분하나, 라이트에서도 가독성이 살짝 향상됨. */
+  background: color-mix(in srgb, var(--color-brand-500) 22%, transparent);
+  color: var(--color-brand-700);
+  font-size: 0.95em;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.tag-pill:hover {
+  background: color-mix(in srgb, var(--color-brand-500) 32%, transparent);
+  color: var(--color-brand-800);
+}
+
+.tag-pill:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 1px;
+}
+
+/* 블록 뷰에서 에디터 내 tag-pill 과 사이드바/리스트 chip 톤이 동일하도록 */
+.mimir-editor .ProseMirror .tag-pill {
+  /* 상속으로 충분. 추가 오버라이드 없음 */
+}
+
+/* -------------------------------------------------------------
+   Tag flash — inline chip 클릭으로 본문 점프 시 일시 강조 (UX1)
+   .tag-pill--flash 을 500ms~1.2s 동안 잠깐 적용한 뒤 제거
+   ------------------------------------------------------------- */
+@keyframes tag-pill-flash {
+  0%   { box-shadow: 0 0 0 0 var(--color-tag-flash); background-color: var(--color-tag-flash); }
+  60%  { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.tag-pill--flash {
+  animation: tag-pill-flash 1.2s ease-out;
 }

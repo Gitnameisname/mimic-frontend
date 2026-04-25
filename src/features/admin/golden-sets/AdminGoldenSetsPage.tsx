@@ -3,6 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { goldenSetsApi, type GoldenItemCreateFormData } from "@/lib/api/s2admin";
+import { downloadJsonFile as exportJsonFile } from "@/lib/utils/download";
+import { formatDateOnly } from "@/lib/utils/date";
+import {
+  GOLDEN_SET_STATUS_LABELS,
+  GOLDEN_SET_DOMAIN_LABELS,
+} from "@/lib/constants/labels";
+import { GOLDEN_SET_STATUS_BADGE_CLASSES } from "@/lib/constants/badges";
 import {
   ApiError,
   API_BASE,
@@ -21,50 +28,24 @@ import type {
 
 // ─── 상수 ───
 
-const DOMAIN_LABELS: Record<GoldenSetDomain, string> = {
-  policy: "정책",
-  regulation: "규정",
-  technical_guide: "기술 가이드",
-  manual: "매뉴얼",
-  faq: "FAQ",
-  custom: "사용자 정의",
-};
-
-const STATUS_LABELS: Record<GoldenSetStatus, string> = {
-  draft: "초안",
-  published: "게시됨",
-  archived: "보관됨",
-};
-
-const STATUS_BADGE_STYLE: Record<GoldenSetStatus, string> = {
-  draft: "bg-gray-100 text-gray-700",
-  published: "bg-blue-50 text-blue-700 border border-blue-200",
-  archived: "bg-gray-200 text-gray-600",
-};
+// 도서관 §1.7 FE-G3 (2026-04-25): 인라인 상수를 `@/lib/constants` 로 이전.
+// 호출지 호환을 위해 로컬 별칭 유지 (DOMAIN_LABELS / STATUS_LABELS / STATUS_BADGE_STYLE).
+const DOMAIN_LABELS = GOLDEN_SET_DOMAIN_LABELS;
+const STATUS_LABELS = GOLDEN_SET_STATUS_LABELS;
+const STATUS_BADGE_STYLE = GOLDEN_SET_STATUS_BADGE_CLASSES;
 
 // ─── 공용 유틸 ───
 
-function formatDate(iso: string | null | undefined): string {
-  if (!iso) return "-";
-  try {
-    return new Date(iso).toLocaleDateString("ko");
-  } catch {
-    return "-";
-  }
-}
+// 도서관 §1.1 FE-G1 (2026-04-25): 로컬 formatDate 제거 → @/lib/utils/date.formatDateOnly
+// 위임. 가시 UX 변경: "2026. 4. 25." (ko locale) → "2026-04-25" (ISO식). F1
+// formatDateTime 과 표기 일관 (admin 시간 표기 통일 정책, 2026-04-25 철균 합의).
+const formatDate = formatDateOnly;
 
+// 도서관 §1.4 FE-G2 (2026-04-25): 로컬 downloadJsonFile 제거 →
+// `@/lib/utils/download` 의 표준 helper 사용. 본 파일 내 호출자는 인자 순서가
+// (data, filename) 이므로 thin wrapper 로 호환 유지.
 function downloadJsonFile(data: unknown, filename: string) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  exportJsonFile(filename, data);
 }
 
 // ─── 에러 분류 (#31) ───

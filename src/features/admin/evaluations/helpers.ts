@@ -251,47 +251,24 @@ export function formatDuration(seconds: number | null | undefined): string {
   return `${m}분 ${s}초`;
 }
 
-export function formatDateTime(iso: string | null | undefined): string {
-  if (!iso) return "-";
-  try {
-    return new Date(iso).toLocaleString("ko");
-  } catch {
-    return "-";
-  }
-}
-
 export function formatCost(usd: number | null | undefined): string {
   if (usd === null || usd === undefined) return "-";
   if (usd < 0.01) return `$${usd.toFixed(4)}`;
   return `$${usd.toFixed(2)}`;
 }
 
-// ─── 상태 ───
+// ─── 상태 / 지표 라벨 / 배지 ───
+//
+// 도서관 §1.7 FE-G3 (2026-04-25): 정의 위치를 `@/lib/constants/{labels,badges}/evaluation.ts`
+// 로 이전. 본 모듈은 thin re-export 로 외부 import 호환을 보존한다 (기존 호출지 그대로 동작).
+// 정책 상수 (METRIC_THRESHOLDS / METRIC_LOWER_IS_BETTER / scorePasses) 는 도메인 정책
+// 이라 본 helper 에 그대로 둔다.
 
-export const STATUS_LABEL: Record<EvaluationRunStatus, string> = {
-  queued: "대기 중",
-  running: "실행 중",
-  completed: "완료",
-  failed: "실패",
-};
-
-export const STATUS_BADGE_STYLE: Record<EvaluationRunStatus, string> = {
-  queued: "bg-gray-100 text-gray-700 border border-gray-200",
-  running: "bg-blue-50 text-blue-700 border border-blue-200",
-  completed: "bg-green-50 text-green-700 border border-green-200",
-  failed: "bg-red-50 text-red-700 border border-red-200",
-};
-
-// ─── 지표 메타 ───
-
-export const METRIC_LABELS: Record<EvaluationMetricKey, string> = {
-  faithfulness: "Faithfulness",
-  answer_relevance: "Answer Relevance",
-  context_precision: "Context Precision",
-  context_recall: "Context Recall",
-  citation_present_rate: "Citation-present",
-  hallucination_rate: "Hallucination",
-};
+export {
+  EVALUATION_RUN_STATUS_LABELS as STATUS_LABEL,
+  EVALUATION_METRIC_LABELS as METRIC_LABELS,
+} from "@/lib/constants/labels/evaluation";
+export { EVALUATION_RUN_STATUS_BADGE_CLASSES as STATUS_BADGE_STYLE } from "@/lib/constants/badges/evaluation";
 
 /**
  * 지표별 임계치 — Phase 7 README.md 와 CLAUDE.md 산출물 규약 (F≥0.80, Citation≥0.90) 기준.

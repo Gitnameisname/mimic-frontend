@@ -27,6 +27,7 @@ import { useMutationWithToast } from "@/hooks/useMutationWithToast";
 import { toast } from "@/stores/uiStore";
 import type { ApiKey, ApiKeyWithSecret } from "@/types/admin";
 import { cn } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils/date";
 
 const SCOPE_LABEL: Record<string, string> = {
   READ_ONLY: "읽기 전용",
@@ -48,15 +49,6 @@ const EXPIRY_OPTIONS = [
   { value: 365, label: "1년" },
   { value: 0, label: "무기한" },
 ];
-
-function formatDateTime(iso?: string | null): string {
-  if (!iso) return "-";
-  try {
-    return new Date(iso).toLocaleString("ko");
-  } catch {
-    return iso;
-  }
-}
 
 function formatRelative(iso?: string | null): string {
   if (!iso) return "-";

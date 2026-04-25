@@ -9,12 +9,13 @@ import type {
   EvaluationRunDetail,
 } from "@/types/s2admin";
 import { cn } from "@/lib/utils";
+import { BADGE_BASE } from "@/lib/styles/tokens";
+import { formatDateTime } from "@/lib/utils/date";
 import {
   METRIC_LABELS,
   STATUS_BADGE_STYLE,
   STATUS_LABEL,
   classifyEvalListError,
-  formatDateTime,
   formatDuration,
   formatInt,
   formatScore,
@@ -56,10 +57,7 @@ function RunHeaderCard({
         </span>
         {detail ? (
           <span
-            className={cn(
-              "inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold",
-              STATUS_BADGE_STYLE[detail.status],
-            )}
+            className={cn(BADGE_BASE, STATUS_BADGE_STYLE[detail.status])}
           >
             {STATUS_LABEL[detail.status]}
           </span>

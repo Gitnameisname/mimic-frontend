@@ -1,3 +1,4 @@
+import { toQueryString } from "@/lib/utils/url";
 import { api } from "./client";
 import type {
   ExtractionCandidate,
@@ -20,11 +21,12 @@ export const extractionsApi = {
     limit?: number;
     offset?: number;
   }): Promise<ExtractionListResponse> => {
-    const qs = new URLSearchParams();
-    if (params?.scope_profile_id) qs.set("scope_profile_id", params.scope_profile_id);
-    if (params?.limit != null) qs.set("limit", String(params.limit));
-    if (params?.offset != null) qs.set("offset", String(params.offset));
-    const raw = await api.get<unknown>(`/api/v1/extractions/pending?${qs}`);
+    const path = `/api/v1/extractions/pending${toQueryString({
+      scope_profile_id: params?.scope_profile_id,
+      limit: params?.limit,
+      offset: params?.offset,
+    })}`;
+    const raw = await api.get<unknown>(path);
     return extractData<ExtractionListResponse>(raw);
   },
 

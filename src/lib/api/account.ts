@@ -6,6 +6,7 @@
  */
 
 import { getAccessToken } from "@/contexts/AuthContext";
+import { isString } from "@/lib/utils/guards";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8050";
 
@@ -115,7 +116,7 @@ async function accountRequest<T>(
     let message = res.statusText;
     if (structured?.error?.message) {
       message = structured.error.message;
-    } else if (typeof structured?.detail === "string") {
+    } else if (isString(structured?.detail)) {
       message = structured.detail;
     } else if (
       structured?.detail &&
@@ -177,4 +178,48 @@ export const accountApi = {
     accountRequest<MessageResponse>(`/api/v1/account/sessions/${sessionId}`, {
       method: "DELETE",
     }),
+
+  /**
+   * 사용자 선호 조회 (Phase 1 FG 1-3).
+   * 빈 선호 상태면 빈 객체 형태로 응답.
+   */
+  getPreferences: () =>
+    accountRequest<PreferencesResponse>("/api/v1/account/preferences"),
+
+  /**
+   * 사용자 선호 partial update.
+   * 키를 명시적 ``null`` 로 보내면 해당 키 삭제 (서버 shallow merge).
+   */
+  updatePreferences: (body: UpdatePreferencesRequest) =>
+    accountRequest<PreferencesResponse>("/api/v1/account/preferences", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
 };
+
+// ─── Preferences 타입 (Phase 1 FG 1-3) ───
+
+export type EditorViewMode = "block" | "flow";
+
+// S3 Phase 2 FG 2-2 UX1 (2026-04-25): 테마 선호
+//   "system" = prefers-color-scheme 추종 (기본). null/undefined 는 "system" 과 동등.
+export type ThemePreference = "system" | "light" | "dark";
+
+export interface UserPreferences {
+  /** 에디터 뷰 모드 선호. 미설정 시 프런트 기본값("block") 사용. */
+  editor_view_mode?: EditorViewMode | null;
+  /** 테마 선호 (FG 2-2 UX1). 미설정/null → "system". */
+  theme?: ThemePreference | null;
+  // 확장용 (서버 extra=allow)
+  [key: string]: unknown;
+}
+
+export interface PreferencesResponse {
+  data: UserPreferences;
+}
+
+export interface UpdatePreferencesRequest {
+  editor_view_mode?: EditorViewMode | null;
+  theme?: ThemePreference | null;
+  [key: string]: unknown;
+}

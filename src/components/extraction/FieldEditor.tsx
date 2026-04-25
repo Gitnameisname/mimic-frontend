@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useExtractionStore } from "@/stores/extractionStore";
 import { cn } from "@/lib/utils";
 import type { ExtractionConfidenceScore } from "@/types/extraction";
+import { isString } from "@/lib/utils/guards";
 
 interface FieldEditorProps {
   fieldName: string;
@@ -32,7 +33,7 @@ function renderValue(value: unknown): string {
 function detectType(value: unknown): "text" | "date" | "number" | "json" {
   if (value === null || value === undefined) return "text";
   if (typeof value === "number") return "number";
-  if (typeof value === "string") {
+  if (isString(value)) {
     if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return "date";
   }
   if (typeof value === "object") return "json";

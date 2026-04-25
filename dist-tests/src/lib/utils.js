@@ -17,6 +17,11 @@ function cn(...inputs) {
  * buildQueryString({ page: 1, q: "hello", status: undefined })
  * // → "?page=1&q=hello"
  * ```
+ *
+ * @deprecated 2026-04-25 G-Carry §1.2c. 새 코드는 `@/lib/utils/url#toQueryString`
+ *   을 사용한다 — 동일 시맨틱 (null/undefined/"" 스킵 · false 보존) 위에 배열 · NaN/Infinity
+ *   처리 · sortKeys/prefix 옵션이 추가됨. 기존 외부 호출자는 모두 마이그레이션 완료.
+ *   본 함수는 하위 호환을 위해 잠정 유지하며, 차후 PR 에서 제거 예정.
  */
 function buildQueryString(params) {
     const p = new URLSearchParams();

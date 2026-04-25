@@ -13,6 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.api = exports.NetworkError = exports.ApiError = exports.API_BASE = void 0;
 exports.getApiErrorMessage = getApiErrorMessage;
 const useAuthz_1 = require("@/hooks/useAuthz");
+const guards_1 = require("@/lib/utils/guards");
 const AuthContext_1 = require("@/contexts/AuthContext");
 exports.API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8050";
 const IS_DEV = process.env.NODE_ENV === "development";
@@ -163,7 +164,7 @@ async function request(path, options = {}, _retry = false) {
         if (structured?.error?.message) {
             message = structured.error.message;
         }
-        else if (typeof structured?.detail === "string") {
+        else if ((0, guards_1.isString)(structured?.detail)) {
             message = structured.detail;
         }
         else if (structured?.detail &&
@@ -171,16 +172,16 @@ async function request(path, options = {}, _retry = false) {
             !Array.isArray(structured.detail)) {
             // Structured detail (P7-2-a). code 는 detail.code 우선, 없으면 error.code 유지.
             const d = structured.detail;
-            if (!code && typeof d.code === "string") {
+            if (!code && (0, guards_1.isString)(d.code)) {
                 code = d.code;
             }
-            if (typeof d.message === "string") {
+            if ((0, guards_1.isString)(d.message)) {
                 message = d.message;
             }
             if (d.hint &&
                 typeof d.hint === "object" &&
-                typeof d.hint.href === "string" &&
-                typeof d.hint.label === "string") {
+                (0, guards_1.isString)(d.hint.href) &&
+                (0, guards_1.isString)(d.hint.label)) {
                 hint = { href: d.hint.href, label: d.hint.label };
             }
         }

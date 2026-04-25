@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 interface Props {
   /** 사이드바 레일(아이콘 전용) 모드 */
@@ -191,6 +192,15 @@ export function SidebarUserPanel({ compact }: Props) {
             }
             label="계정 설정"
           />
+
+          {/* S3 Phase 2 FG 2-2 UX1 (2026-04-25): 테마 선택 세그먼트 */}
+          <hr className="my-1 border-[var(--color-border)]" />
+          <div className="px-4 py-2">
+            <p className="mb-1.5 text-[11px] uppercase tracking-wide text-[var(--color-text-subtle)]">
+              테마
+            </p>
+            <ThemeToggle />
+          </div>
 
           {isAdmin && (
             <>

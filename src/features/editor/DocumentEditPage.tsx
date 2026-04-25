@@ -1,15 +1,20 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { documentsApi, versionsApi, nodesApi, getApiErrorMessage } from "@/lib/api";
+import { documentsApi, versionsApi, getApiErrorMessage } from "@/lib/api";
 import { toast } from "@/stores/uiStore";
 import { Button } from "@/components/button/Button";
 import { SkeletonBlock } from "@/components/feedback/SkeletonBlock";
 import { ErrorState } from "@/components/feedback/ErrorState";
 import { useAuthz } from "@/hooks/useAuthz";
-import type { DocumentNode } from "@/types";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { emptyProseMirrorDoc, isProseMirrorDoc, type ProseMirrorDoc } from "@/types/prosemirror";
+import { DocumentTipTapEditor, type EditorViewMode } from "./tiptap/DocumentTipTapEditor";
+// S3 Phase 2 FG 2-2 UX1: `?focus_tag=<name>` 으로 진입 시 본문 해당 hashtag 로 점프
+import { scrollToInlineTag } from "@/features/tags/scrollToInlineTag";
 
 interface Props {
   documentId: string;
@@ -17,75 +22,138 @@ interface Props {
 
 type SaveStatus = "saved" | "unsaved" | "saving" | "error";
 
+/**
+ * Phase 1 FG 1-2 — TipTap 기반 에디터 페이지.
+ *
+ * FG 1-1 에서 저장 모델이 `content_snapshot` (ProseMirror doc) 단일 정본으로 확정.
+ * FG 1-2 에서 본 컴포넌트가 TipTap 으로 재작성되어 `editor.getJSON()` 결과를
+ * 그대로 저장 바디로 사용한다. nodes[] state 와 임시 어댑터는 제거됨.
+ *
+ * 초기 로드:
+ *   1) getLatest 로 현재 draft(또는 published) version id 확인.
+ *   2) versionsApi.get(documentId, id) 로 상세(content_snapshot 포함) 재조회.
+ *      (getLatest 는 include_content=false 기본이라 두 단계 fetch 필요)
+ *
+ * 뷰 토글:
+ *   FG 1-2 Step 5 에서 헤더 세그먼트 버튼 + 단축키 부착.
+ *   FG 1-3 에서 users.preferences 로 선호값 저장/복원.
+ */
+const AUTOSAVE_DEBOUNCE_MS = 30_000;
+
 export function DocumentEditPage({ documentId }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const qc = useQueryClient();
-  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { can } = useAuthz();
   const readOnly = !can("document.edit");
 
   const [title, setTitle] = useState("");
-  const [nodes, setNodes] = useState<DocumentNode[]>([]);
+  const [doc, setDoc] = useState<ProseMirrorDoc>(() => emptyProseMirrorDoc());
+  const [viewMode, setViewMode] = useState<EditorViewMode>("block");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [isDirty, setIsDirty] = useState(false);
+
+  // Phase 1 FG 1-3: 서버 저장된 뷰 선호 로드 + 토글 시 debounced PATCH.
+  const { preferences, updatePreference } = useUserPreferences();
+  const viewModePreferenceAppliedRef = useRef(false);
+
+  // 초기 1회 — 서버 선호값을 viewMode state 로 복사.
+  useEffect(() => {
+    if (viewModePreferenceAppliedRef.current) return;
+    const saved = preferences?.editor_view_mode;
+    if (saved === "block" || saved === "flow") {
+      /* eslint-disable-next-line react-hooks/set-state-in-effect -- 서버 선호 초기 1회 복사 */
+      setViewMode(saved);
+    }
+    if (preferences !== undefined) {
+      // preferences fetch 완료(값 없음 포함) 시점에 가드 활성화
+      viewModePreferenceAppliedRef.current = true;
+    }
+  }, [preferences]);
+
+  // viewMode 변경 → 서버 PATCH (debounce 400ms). 초기 복사 직후 사이클에서는
+  // 동일 값으로의 쓰기를 방지.
+  useEffect(() => {
+    if (!viewModePreferenceAppliedRef.current) return;
+    const saved = preferences?.editor_view_mode;
+    if (saved === viewMode) return;
+    updatePreference({ editor_view_mode: viewMode });
+    // preferences 는 의도적으로 deps 에 포함하지 않음 — optimistic 반영 이후
+    // 같은 값에 대한 재전송을 피한다. hook 자체가 onMutate 에서 query 갱신.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, updatePreference]);
 
   const docQuery = useQuery({
     queryKey: ["document", documentId],
     queryFn: () => documentsApi.get(documentId),
   });
 
-  const versionQuery = useQuery({
+  const latestQuery = useQuery({
     queryKey: ["version-latest", documentId],
     queryFn: () => versionsApi.getLatest(documentId),
     enabled: !!docQuery.data,
   });
 
-  const nodesQuery = useQuery({
-    queryKey: ["nodes", documentId],
-    queryFn: () => nodesApi.list(documentId),
-    enabled: !!versionQuery.data,
+  // FG 1-2: latest 는 include_content=false 기본. 상세 재조회로 content_snapshot 확보.
+  const versionDetailQuery = useQuery({
+    queryKey: ["version-detail", documentId, latestQuery.data?.id],
+    queryFn: () => versionsApi.get(documentId, latestQuery.data!.id),
+    enabled: !!latestQuery.data?.id,
   });
 
-  // 초기 데이터 로드
-  // 제목 우선순위: version.title_snapshot(최신 저장본) → doc.title(생성 시 제목).
-  // F-05 시정(2026-04-18): "서버에서 fetch → 로컬 편집 state 로 복사" 는 전형적인
-  //   synchronizing-to-external-system 효과로 set-state-in-effect 규칙의 의도된
-  //   예외 영역임(React 문서의 "You Might Not Need an Effect" 중 "Resetting all state
-  //   when a prop changes" 패턴 참고). 다만 sync 조건에 "초기 1회" 가드를 두어
-  //   refetch 시 사용자의 미저장 편집을 덮어쓰지 않도록 보강.
+  // 초기 1회 — 서버 스냅샷을 로컬 편집 state 로 복사.
+  // F-05 시정(2026-04-18): set-state-in-effect 의 synchronizing-to-external-system
+  //   예외 영역. initializedRef 가드로 refetch 덮어쓰기 방지.
   const initializedRef = useRef(false);
   useEffect(() => {
     if (initializedRef.current) return;
-    const hasSeed = (versionQuery.data?.title_snapshot ?? docQuery.data) != null;
-    const hasNodes = nodesQuery.data != null;
-    if (!hasSeed || !hasNodes) return;
-    /* eslint-disable react-hooks/set-state-in-effect -- 서버에서 로드된 버전 스냅샷을
-       로컬 편집 state 로 1회 복사하는 동기화 효과. initializedRef 가드로 refetch 덮어쓰기 방지. */
-    setTitle(versionQuery.data?.title_snapshot ?? docQuery.data?.title ?? "");
-    setNodes(nodesQuery.data ?? []);
+    const detail = versionDetailQuery.data;
+    if (!detail) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- 서버 스냅샷 1회 복사 */
+    setTitle(detail.title_snapshot ?? docQuery.data?.title ?? "");
+    setDoc(
+      isProseMirrorDoc(detail.content_snapshot)
+        ? detail.content_snapshot
+        : emptyProseMirrorDoc(),
+    );
     /* eslint-enable react-hooks/set-state-in-effect */
     initializedRef.current = true;
-  }, [docQuery.data, versionQuery.data, nodesQuery.data]);
+  }, [docQuery.data, versionDetailQuery.data]);
+
+  // S3 Phase 2 FG 2-2 UX1 (2026-04-25): `?focus_tag=<name>` 진입 시 TipTap 렌더가
+  // 끝난 직후 본문의 해당 hashtag 위치로 점프 + flash. 편집기는 마운트 후 한 프레임
+  // 더 필요하므로 짧은 setTimeout 으로 대기. 미발견 시 toast degrade.
+  const focusTagHandledRef = useRef(false);
+  useEffect(() => {
+    if (focusTagHandledRef.current) return;
+    if (!initializedRef.current) return;
+    const focusTag = searchParams.get("focus_tag");
+    if (!focusTag) return;
+    focusTagHandledRef.current = true;
+    const handle = window.setTimeout(() => {
+      const ok = scrollToInlineTag(focusTag);
+      if (!ok) {
+        toast(
+          `본문에 #${focusTag} 을 찾지 못했습니다. frontmatter 태그만 있을 수 있습니다.`,
+          "info",
+        );
+      }
+    }, 150);
+    return () => window.clearTimeout(handle);
+  }, [searchParams, versionDetailQuery.data]);
 
   const saveMutation = useMutation({
     mutationFn: () =>
-      versionsApi.saveDraft(documentId, versionQuery.data!.id, {
+      versionsApi.saveDraft(documentId, {
         title,
-        nodes: nodes.map((n) => ({
-          id: n.id,
-          node_type: n.node_type,
-          order: n.order,
-          parent_id: n.parent_id,
-          title: n.title,
-          content: n.content,
-          metadata: n.metadata,
-        })),
+        content_snapshot: doc,
       }),
     onMutate: () => setSaveStatus("saving"),
     onSuccess: () => {
       setSaveStatus("saved");
       setIsDirty(false);
       qc.invalidateQueries({ queryKey: ["document", documentId] });
+      qc.invalidateQueries({ queryKey: ["version-latest", documentId] });
     },
     onError: (err) => {
       setSaveStatus("error");
@@ -93,80 +161,65 @@ export function DocumentEditPage({ documentId }: Props) {
     },
   });
 
-  const handleSave = useCallback(() => {
-    if (!versionQuery.data) return;
+  // 자동 저장 — 마지막 편집 후 AUTOSAVE_DEBOUNCE_MS 경과 시 1회.
+  // (docs/함수도서관 §1.6a `useDebouncedCallback` 적용. 2026-04-25 의미 확정:
+  //  기존은 "isDirty=true 진입 시점부터 30s 후 1회" 였으나, 진짜 debounce 로 변경 —
+  //  사용자 입력이 멈추면 30s 후 저장, 입력 중이면 타이머 reset.)
+  const triggerAutoSave = useCallback(() => {
+    if (!latestQuery.data) return;
     saveMutation.mutate();
-  }, [saveMutation, versionQuery.data]);
+  }, [saveMutation, latestQuery.data]);
 
-  // 자동 저장 (30초)
-  useEffect(() => {
-    if (!isDirty) return;
-    autoSaveTimer.current = setTimeout(() => handleSave(), 30_000);
-    return () => {
-      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    };
-  }, [isDirty, handleSave]);
+  const [scheduleAutoSave, , cancelAutoSave] = useDebouncedCallback(
+    triggerAutoSave,
+    AUTOSAVE_DEBOUNCE_MS,
+  );
 
-  // Cmd/Ctrl + S
+  const handleSave = useCallback(() => {
+    if (!latestQuery.data) return;
+    // 명시적 저장 시 자동 저장 타이머 취소 (이중 발사 방지)
+    cancelAutoSave();
+    saveMutation.mutate();
+  }, [saveMutation, latestQuery.data, cancelAutoSave]);
+
+  // Cmd/Ctrl + S (저장) + Cmd/Ctrl + Alt + M (뷰 모드 토글)
+  // Cmd/Shift 조합은 Chrome 북마크 바(Cmd+Shift+B) / 일반텍스트 붙여넣기(Cmd+Shift+V)
+  // 등 브라우저 예약과 충돌해서, 비교적 충돌이 적은 Alt/Option 조합을 기본값으로 한다.
+  // (UI 리뷰 5회에서 최종 확정 예정)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key === "s") {
         e.preventDefault();
         handleSave();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.altKey && (e.key === "m" || e.key === "M")) {
+        e.preventDefault();
+        setViewMode((prev) => (prev === "block" ? "flow" : "block"));
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [handleSave]);
 
-  const markDirty = () => {
+  const markDirty = useCallback(() => {
     setIsDirty(true);
     setSaveStatus("unsaved");
-  };
+    // 진짜 debounce: 매 편집마다 타이머 reset → 마지막 편집 후 AUTOSAVE_DEBOUNCE_MS
+    scheduleAutoSave();
+  }, [scheduleAutoSave]);
 
-  const addNode = (type: DocumentNode["node_type"]) => {
-    const newNode: DocumentNode = {
-      id: crypto.randomUUID(),
-      version_id: versionQuery.data?.id ?? "",
-      parent_id: null,
-      node_type: type,
-      order: nodes.filter((n) => !n.parent_id).length,
-      title: type === "section" ? "새 섹션" : undefined,
-      content: type !== "section" ? "" : undefined,
-    };
-    setNodes((prev) => [...prev, newNode]);
-    markDirty();
-  };
-
-  const updateNode = (id: string, changes: Partial<DocumentNode>) => {
-    setNodes((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, ...changes } : n))
-    );
-    markDirty();
-  };
-
-  const removeNode = (id: string) => {
-    setNodes((prev) => prev.filter((n) => n.id !== id && n.parent_id !== id));
-    markDirty();
-  };
-
-  const moveNode = (id: string, direction: "up" | "down") => {
-    setNodes((prev) => {
-      const roots = prev
-        .filter((n) => !n.parent_id)
-        .sort((a, b) => a.order - b.order);
-      const idx = roots.findIndex((n) => n.id === id);
-      const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-      if (swapIdx < 0 || swapIdx >= roots.length) return prev;
-      const updated = prev.map((n) => {
-        if (n.id === roots[idx].id) return { ...n, order: roots[swapIdx].order };
-        if (n.id === roots[swapIdx].id) return { ...n, order: roots[idx].order };
-        return n;
-      });
-      return updated;
-    });
-    markDirty();
-  };
+  const handleDocChange = useCallback(
+    (next: ProseMirrorDoc) => {
+      setDoc(next);
+      // TipTap onUpdate 는 초기 setContent 때도 호출되지 않는다 (emitUpdate:false 옵션).
+      // 실 사용자 입력 시점에만 dirty 마킹.
+      if (initializedRef.current) {
+        markDirty();
+      }
+    },
+    [markDirty],
+  );
 
   const SAVE_STATUS_TEXT: Record<SaveStatus, string> = {
     saved: "저장됨 ✓",
@@ -182,7 +235,7 @@ export function DocumentEditPage({ documentId }: Props) {
     error: "text-red-500 cursor-pointer",
   };
 
-  if (docQuery.isLoading || versionQuery.isLoading || nodesQuery.isLoading) {
+  if (docQuery.isLoading || latestQuery.isLoading || versionDetailQuery.isLoading) {
     return <div className="p-6"><SkeletonBlock rows={10} /></div>;
   }
 
@@ -203,14 +256,10 @@ export function DocumentEditPage({ documentId }: Props) {
     );
   }
 
-  const rootNodes = nodes
-    .filter((n) => !n.parent_id)
-    .sort((a, b) => a.order - b.order);
-
   return (
     <div className="flex flex-col h-full">
-      {/* Edit Header */}
-      <div className="shrink-0 border-b border-gray-200 bg-white px-4 py-3 flex items-center gap-3">
+      {/* Edit Header — 좁은 화면에서는 wrap 허용 (FG 1-2 모바일 호환: "차단 안 하는 수준") */}
+      <div className="shrink-0 border-b border-gray-200 bg-white px-4 py-3 flex items-center gap-3 flex-wrap sm:flex-nowrap">
         <Button
           variant="ghost"
           size="sm"
@@ -233,14 +282,61 @@ export function DocumentEditPage({ documentId }: Props) {
             setTitle(e.target.value);
             markDirty();
           }}
+          aria-label="문서 제목"
         />
 
-        <span
-          className={`text-xs shrink-0 ${SAVE_STATUS_COLOR[saveStatus]}`}
-          onClick={saveStatus === "error" ? handleSave : undefined}
+        {/* 뷰 모드 세그먼트 */}
+        <div
+          role="group"
+          aria-label="에디터 뷰 모드"
+          className="shrink-0 inline-flex rounded-md border border-gray-200 bg-white overflow-hidden text-xs"
         >
-          {SAVE_STATUS_TEXT[saveStatus]}
-        </span>
+          <button
+            type="button"
+            aria-pressed={viewMode === "block"}
+            onClick={() => setViewMode("block")}
+            className={`px-2.5 py-1 transition-colors ${
+              viewMode === "block"
+                ? "bg-gray-900 text-white"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+            title="블록 뷰 — 블록별 카드 표시 (⌘/Ctrl+Alt+M 으로 토글)"
+          >
+            블록
+          </button>
+          <button
+            type="button"
+            aria-pressed={viewMode === "flow"}
+            onClick={() => setViewMode("flow")}
+            className={`px-2.5 py-1 border-l border-gray-200 transition-colors ${
+              viewMode === "flow"
+                ? "bg-gray-900 text-white"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+            title="일반 뷰 — 흐르는 리치텍스트 (⌘/Ctrl+Alt+M 으로 토글)"
+          >
+            일반
+          </button>
+        </div>
+
+        {saveStatus === "error" ? (
+          <button
+            type="button"
+            className={`text-xs shrink-0 ${SAVE_STATUS_COLOR[saveStatus]}`}
+            aria-live="polite"
+            onClick={handleSave}
+          >
+            {SAVE_STATUS_TEXT[saveStatus]}
+          </button>
+        ) : (
+          <span
+            className={`text-xs shrink-0 ${SAVE_STATUS_COLOR[saveStatus]}`}
+            role="status"
+            aria-live="polite"
+          >
+            {SAVE_STATUS_TEXT[saveStatus]}
+          </span>
+        )}
 
         <Button
           variant="primary"
@@ -253,149 +349,16 @@ export function DocumentEditPage({ documentId }: Props) {
         </Button>
       </div>
 
-      {/* Toolbar */}
-      <div className="shrink-0 border-b border-gray-100 bg-white px-4 py-1.5 flex items-center gap-2">
-        <span className="text-xs text-gray-500 mr-1">블록 추가:</span>
-        {(["section", "paragraph", "heading", "list", "code_block"] as const).map((t) => {
-          const labels: Record<string, string> = {
-            section: "섹션",
-            paragraph: "단락",
-            heading: "제목",
-            list: "목록",
-            code_block: "코드",
-          };
-          return (
-            <button
-              key={t}
-              className="text-xs px-2 py-1 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
-              onClick={() => addNode(t)}
-            >
-              + {labels[t]}
-            </button>
-          );
-        })}
-      </div>
-
       {/* Editor Body */}
       <div className="flex-1 overflow-y-auto px-6 py-6 max-w-3xl mx-auto w-full">
-        {rootNodes.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <p className="text-sm">위의 버튼으로 블록을 추가해 편집을 시작하세요.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {rootNodes.map((node, idx) => (
-              <EditableNode
-                key={node.id}
-                node={node}
-                isFirst={idx === 0}
-                isLast={idx === rootNodes.length - 1}
-                onUpdate={updateNode}
-                onRemove={removeNode}
-                onMove={moveNode}
-              />
-            ))}
-          </div>
-        )}
+        <DocumentTipTapEditor
+          initialContent={doc}
+          onChange={handleDocChange}
+          viewMode={viewMode}
+          readOnly={readOnly}
+          placeholder="내용을 입력하세요…"
+        />
       </div>
-    </div>
-  );
-}
-
-function EditableNode({
-  node,
-  isFirst,
-  isLast,
-  onUpdate,
-  onRemove,
-  onMove,
-}: {
-  node: DocumentNode;
-  isFirst: boolean;
-  isLast: boolean;
-  onUpdate: (id: string, changes: Partial<DocumentNode>) => void;
-  onRemove: (id: string) => void;
-  onMove: (id: string, direction: "up" | "down") => void;
-}) {
-  const baseClass =
-    "w-full border border-transparent hover:border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:border-blue-300 focus:bg-blue-50/20 transition-colors resize-none";
-
-  return (
-    <div className="group relative pr-8">
-      {/* 우측 액션 버튼 */}
-      <div className="absolute right-0 top-0 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          className="p-0.5 text-gray-400 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
-          onClick={() => onMove(node.id, "up")}
-          disabled={isFirst}
-          title="위로 이동"
-        >
-          ▲
-        </button>
-        <button
-          className="p-0.5 text-gray-400 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
-          onClick={() => onMove(node.id, "down")}
-          disabled={isLast}
-          title="아래로 이동"
-        >
-          ▼
-        </button>
-        <button
-          className="p-0.5 text-gray-400 hover:text-red-500 mt-1"
-          onClick={() => onRemove(node.id)}
-          title="삭제"
-        >
-          ×
-        </button>
-      </div>
-
-      {node.node_type === "section" && (
-        <input
-          className={`${baseClass} text-lg font-semibold text-gray-900 bg-transparent`}
-          value={node.title ?? ""}
-          placeholder="섹션 제목..."
-          onChange={(e) => onUpdate(node.id, { title: e.target.value })}
-        />
-      )}
-
-      {node.node_type === "heading" && (
-        <input
-          className={`${baseClass} text-base font-semibold text-gray-800 bg-transparent`}
-          value={node.content ?? ""}
-          placeholder="제목..."
-          onChange={(e) => onUpdate(node.id, { content: e.target.value })}
-        />
-      )}
-
-      {node.node_type === "paragraph" && (
-        <textarea
-          className={`${baseClass} text-sm text-gray-700 bg-transparent`}
-          value={node.content ?? ""}
-          placeholder="내용을 입력하세요..."
-          rows={3}
-          onChange={(e) => onUpdate(node.id, { content: e.target.value })}
-        />
-      )}
-
-      {node.node_type === "list" && (
-        <textarea
-          className={`${baseClass} text-sm text-gray-700 bg-transparent font-mono`}
-          value={node.content ?? ""}
-          placeholder="항목을 입력하세요 (한 줄에 하나씩)..."
-          rows={4}
-          onChange={(e) => onUpdate(node.id, { content: e.target.value })}
-        />
-      )}
-
-      {node.node_type === "code_block" && (
-        <textarea
-          className={`${baseClass} text-sm text-gray-100 bg-gray-900 rounded-lg font-mono`}
-          value={node.content ?? ""}
-          placeholder="코드를 입력하세요..."
-          rows={6}
-          onChange={(e) => onUpdate(node.id, { content: e.target.value })}
-        />
-      )}
     </div>
   );
 }

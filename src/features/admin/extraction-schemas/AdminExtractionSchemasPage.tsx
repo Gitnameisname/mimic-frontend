@@ -28,6 +28,8 @@ import {
   isDocTypeNotFoundError,
   resolveDocTypeNotFoundHint,
 } from "./docTypeNormalize";
+import { formatDateOnly } from "@/lib/utils/date";
+import { isString } from "@/lib/utils/guards";
 
 // P5: 순수 로직 유틸은 diffMismatch.ts 에서 구현되며 테스트가 직접 import 한다.
 // 이 파일은 공통 타입과 함수를 재export 해 호출부 호환을 유지한다.
@@ -458,7 +460,7 @@ function computeFieldsDiff(
 function renderValue(v: unknown): string {
   if (v === undefined) return "—";
   if (v === null) return "null";
-  if (typeof v === "string") return v === "" ? '""' : v;
+  if (isString(v)) return v === "" ? '""' : v;
   try {
     return JSON.stringify(v);
   } catch {
@@ -2219,7 +2221,7 @@ export function AdminExtractionSchemasPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-xs">
-                        {new Date(s.updated_at).toLocaleDateString("ko")}
+                        {formatDateOnly(s.updated_at)}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button

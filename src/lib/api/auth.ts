@@ -5,6 +5,8 @@
  * 회원가입, 로그인, 비밀번호 재설정, 이메일 인증 등.
  */
 
+import { isString } from "@/lib/utils/guards";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8050";
 
 // ─── Request / Response 타입 ───
@@ -101,7 +103,7 @@ async function authRequest<T>(
     let message = res.statusText;
     if (structured?.error?.message) {
       message = structured.error.message;
-    } else if (typeof structured?.detail === "string") {
+    } else if (isString(structured?.detail)) {
       message = structured.detail;
     } else if (
       structured?.detail &&

@@ -24,8 +24,24 @@
     "tests/**/*.tsx",
     "src/components/admin/DataTable.tsx",
     "src/lib/utils.ts",
+    "src/lib/utils/date.ts",
     "src/features/admin/extraction-schemas/diffMismatch.ts",
-    "src/types/s2admin.ts"
+    "src/types/s2admin.ts",
+    "src/features/explore/FoldersTree.tsx",
+    "src/features/explore/FolderMoveDialog.tsx",
+    "src/features/explore/EditCollectionModal.tsx",
+    "src/lib/api/collections.ts",
+    "src/lib/api/folders.ts",
+    "src/lib/api/documents.ts",
+    "src/lib/api/search.ts",
+    "src/lib/api/tags.ts",
+    "src/lib/api/client.ts",
+    "src/features/tags/TagChipsEditor.tsx",
+    "src/features/tags/scrollToInlineTag.ts",
+    "src/features/editor/tiptap/extensions/HashtagMark.ts",
+    "src/components/theme/ThemeApplier.tsx",
+    "src/hooks/useDebouncedValue.ts",
+    "src/hooks/useDebouncedCallback.ts"
   ],
   "exclude": ["node_modules", ".next", "dist-tests"]
 }

@@ -12,6 +12,7 @@ import { accountApi, type ProfileData } from "@/lib/api/account";
 import { AuthInput } from "@/components/auth/AuthInput";
 import { Button } from "@/components/button/Button";
 import { cn } from "@/lib/utils";
+import { formatDateOnly } from "@/lib/utils/date";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -132,7 +133,8 @@ export default function ProfilePage() {
           <div className="min-w-0">
             <dt className="text-gray-500 font-medium">가입일</dt>
             <dd className="text-gray-900 font-medium mt-1">
-              {profile.created_at ? new Date(profile.created_at).toLocaleDateString("ko-KR") : "-"}
+              {/* 도서관 §1.1 R2 (2026-04-25): formatDateOnly 표준화 (ko locale → ISO식) */}
+              {formatDateOnly(profile.created_at)}
             </dd>
           </div>
         </dl>

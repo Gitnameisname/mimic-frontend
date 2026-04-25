@@ -8,6 +8,7 @@ import { z } from "zod";
 import { promptsApi } from "@/lib/api/s2admin";
 import type { Prompt, PromptVersion } from "@/types/s2admin";
 import { cn } from "@/lib/utils";
+import { formatDateOnly } from "@/lib/utils/date";
 
 // ─── 모달: 프롬프트 생성 ───
 
@@ -412,7 +413,7 @@ export function AdminPromptsPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
-                        {new Date(p.updated_at).toLocaleDateString("ko")}
+                        {formatDateOnly(p.updated_at)}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button

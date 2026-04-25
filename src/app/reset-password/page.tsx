@@ -13,6 +13,7 @@ import { AuthLayout } from "@/components/auth/AuthLayout";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { Button } from "@/components/button/Button";
 import { resetPasswordSchema, type ResetPasswordFormData } from "@/lib/validations/auth";
+import { ALERT_ERROR } from "@/lib/styles/tokens";
 import { authApi } from "@/lib/api/auth";
 
 function ResetPasswordForm() {
@@ -111,7 +112,8 @@ function ResetPasswordForm() {
         {serverError && (
           <div
             role="alert"
-            className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium"
+            // 도서관 §1.8 FE-G4 (2026-04-25): ALERT_ERROR 토큰
+            className={ALERT_ERROR}
           >
             {serverError}
           </div>

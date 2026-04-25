@@ -17,6 +17,12 @@ import { VectorizationPanel } from "./VectorizationPanel";
 import { WorkflowActionModal } from "../workflow/WorkflowActionModal";
 import { RagPanel } from "../rag/RagPanel";
 import { AgentProposalsTab } from "./AgentProposalsTab";
+// S3 Phase 2 FG 2-1: 문서 상세 상단의 폴더/컬렉션 배치 위젯
+import { DocumentAssignControls } from "@/features/explore/DocumentAssignControls";
+// S3 Phase 2 FG 2-2: 문서 상세 태그 편집 위젯
+import { TagChipsEditor } from "@/features/tags/TagChipsEditor";
+// FG 2-2 UX1: inline chip 클릭 시 편집 모드로 이동하며 해당 hashtag 위치 포커스
+import { useRouter } from "next/navigation";
 import { formatDate, relativeTime } from "@/lib/utils";
 import { useAuthz } from "@/hooks/useAuthz";
 import type { WorkflowStatus, WorkflowAction } from "@/types";
@@ -27,6 +33,7 @@ interface Props {
 
 export function DocumentDetailPage({ documentId }: Props) {
   const qc = useQueryClient();
+  const router = useRouter();
   const [actionModal, setActionModal] = useState<"approve" | "reject" | "submit-review" | null>(null);
   const [publishConfirm, setPublishConfirm] = useState(false);
   const [historyExpanded, setHistoryExpanded] = useState(false);
@@ -193,6 +200,31 @@ export function DocumentDetailPage({ documentId }: Props) {
               >
                 💬 AI 질의
               </Button>
+            </div>
+
+            {/* S3 Phase 2 FG 2-1: 폴더 / 컬렉션 배치 (뷰 레이어 — ACL 무영향) */}
+            <div className="mt-3">
+              <DocumentAssignControls
+                documentId={documentId}
+                currentFolderId={doc.folder_id ?? null}
+                currentCollectionIds={doc.in_collection_ids ?? []}
+              />
+            </div>
+
+            {/* S3 Phase 2 FG 2-2: 태그 편집 — 서버 파서가 정본. inline 은 본문 편집으로만 변경.
+                UX1 (2026-04-25): readonly inline chip 클릭 → 편집 모드로 이동하며
+                `?focus_tag=<name>` 쿼리로 본문의 해당 hashtag 위치를 scroll + flash. */}
+            <div className="mt-3">
+              <TagChipsEditor
+                documentId={documentId}
+                currentTags={doc.document_tags ?? []}
+                baseMetadata={doc.metadata ?? {}}
+                onJumpToInlineTag={(name) => {
+                  router.push(
+                    `/documents/${documentId}/edit?focus_tag=${encodeURIComponent(name)}`,
+                  );
+                }}
+              />
             </div>
           </div>
 

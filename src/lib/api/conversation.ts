@@ -10,6 +10,7 @@
  *  POST   /api/v1/rag/answer                     S2 RAG 답변
  */
 
+import { toQueryString } from "@/lib/utils/url";
 import { api } from "./client";
 import type {
   Conversation,
@@ -56,15 +57,13 @@ export const conversationApi = {
     limit = 20,
     options: { status?: string; search?: string } = {}
   ): Promise<ConversationListResponse> => {
-    const params = new URLSearchParams({
-      page: String(page),
-      limit: String(limit),
-    });
-    if (options.status) params.set("status", options.status);
-    if (options.search) params.set("search", options.search);
-    const res = await api.get<Envelope<ConversationListResponse>>(
-      `/api/v1/conversations?${params.toString()}`
-    );
+    const path = `/api/v1/conversations${toQueryString({
+      page,
+      limit,
+      status: options.status,
+      search: options.search,
+    })}`;
+    const res = await api.get<Envelope<ConversationListResponse>>(path);
     return unwrap(res);
   },
 

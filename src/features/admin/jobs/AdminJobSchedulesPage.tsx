@@ -25,6 +25,7 @@ import { adminApi } from "@/lib/api/admin";
 import { useAuth } from "@/contexts/AuthContext";
 import { Modal, ModalActions } from "@/components/feedback/Modal";
 import { useMutationWithToast } from "@/hooks/useMutationWithToast";
+import { formatDateOnly } from "@/lib/utils/date";
 import type {
   JobSchedule,
   JobScheduleDetail,
@@ -60,7 +61,8 @@ function formatRelative(iso: string | null | undefined): string {
   if (hrs < 24) return `${hrs}시간 전`;
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}일 전`;
-  return d.toLocaleDateString("ko-KR");
+  // 도서관 §1.1 R2 (2026-04-25): formatDateOnly 표준화 (ko locale → ISO식)
+  return formatDateOnly(d.toISOString());
 }
 
 function formatDuration(ms: number | null | undefined): string {

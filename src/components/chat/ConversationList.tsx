@@ -21,6 +21,7 @@
 import { useEffect, useCallback, useState } from "react";
 import { useConversationListStore, type FilterTab } from "@/stores/conversationListStore";
 import { conversationApi } from "@/lib/api/conversation";
+import { downloadJsonFile } from "@/lib/utils/download";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import SearchBox from "./SearchBox";
 import FilterTabs from "./FilterTabs";
@@ -155,13 +156,8 @@ export default function ConversationList({
   const handleExport = async (id: string) => {
     try {
       const data = await conversationApi.exportJson(id);
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `conversation-${id}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      // 도서관 §1.4 FE-G2 (2026-04-25): downloadJsonFile 표준 helper 사용
+      downloadJsonFile(`conversation-${id}.json`, data);
     } catch { /* 내보내기 실패 무시 */ }
   };
 

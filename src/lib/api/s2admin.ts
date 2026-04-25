@@ -1,5 +1,5 @@
 import { api } from "./client";
-import { buildQueryString } from "@/lib/utils";
+import { toQueryString } from "@/lib/utils/url";
 import type {
   LLMProvider,
   ProviderTestResult,
@@ -86,7 +86,7 @@ export const providersApi = {
 export const promptsApi = {
   list: (params?: { page?: number; page_size?: number }) =>
     api.get<PagedResponse<Prompt>>(
-      `/api/v1/admin/prompts${buildQueryString(params ?? {})}`
+      `/api/v1/admin/prompts${toQueryString(params ?? {})}`
     ),
 
   get: (id: string) =>
@@ -124,11 +124,11 @@ export const capabilitiesApi = {
 export const usageApi = {
   getDashboard: (params?: { days?: number; provider?: string }) =>
     api.get<SingleResponse<UsageDashboard>>(
-      `/api/v1/admin/usage${buildQueryString(params ?? {})}`
+      `/api/v1/admin/usage${toQueryString(params ?? {})}`
     ),
 
   exportCsv: (params?: { days?: number }) =>
-    `/api/v1/admin/usage/export${buildQueryString(params ?? {})}`,
+    `/api/v1/admin/usage/export${toQueryString(params ?? {})}`,
 };
 
 // ── FG6.2: Agents & Scope ──
@@ -136,7 +136,7 @@ export const usageApi = {
 export const agentsApi = {
   list: (params?: { page?: number; page_size?: number; status?: string }) =>
     api.get<PagedResponse<Agent>>(
-      `/api/v1/admin/agents${buildQueryString(params ?? {})}`
+      `/api/v1/admin/agents${toQueryString(params ?? {})}`
     ),
 
   get: (id: string) =>
@@ -181,14 +181,14 @@ export const agentsApi = {
     params?: { start_date?: string; end_date?: string; action_type?: string; page?: number; page_size?: number }
   ) =>
     api.get<PagedResponse<AuditEvent>>(
-      `/api/v1/admin/agents/${id}/audit${buildQueryString(params ?? {})}`
+      `/api/v1/admin/agents/${id}/audit${toQueryString(params ?? {})}`
     ),
 };
 
 export const scopeProfilesApi = {
   list: (params?: { page?: number; page_size?: number }) =>
     api.get<PagedResponse<ScopeProfile>>(
-      `/api/v1/admin/scope-profiles${buildQueryString(params ?? {})}`
+      `/api/v1/admin/scope-profiles${toQueryString(params ?? {})}`
     ),
 
   get: (id: string) =>
@@ -242,7 +242,7 @@ export const proposalsApi = {
     end_date?: string;
   }) =>
     api.get<PagedResponse<Proposal>>(
-      `/api/v1/admin/proposals${buildQueryString(params ?? {})}`
+      `/api/v1/admin/proposals${toQueryString(params ?? {})}`
     ),
 
   get: (id: string) =>
@@ -284,7 +284,7 @@ export const proposalsApi = {
 export const agentActivityApi = {
   getDashboard: (params?: { days?: number }) =>
     api.get<SingleResponse<AgentActivityDashboard>>(
-      `/api/v1/admin/agent-activity${buildQueryString(params ?? {})}`
+      `/api/v1/admin/agent-activity${toQueryString(params ?? {})}`
     ),
 };
 
@@ -330,7 +330,7 @@ export interface GoldenItemUpdateFormData {
 export const goldenSetsApi = {
   list: (params?: { offset?: number; limit?: number; domain?: string; status?: string }) =>
     api.get<PagedResponse<GoldenSet>>(
-      `/api/v1/golden-sets${buildQueryString(params ?? {})}`
+      `/api/v1/golden-sets${toQueryString(params ?? {})}`
     ),
 
   get: (id: string) =>
@@ -355,7 +355,7 @@ export const goldenSetsApi = {
 
   listItems: (id: string, params?: { offset?: number; limit?: number }) =>
     api.get<PagedResponse<GoldenSetItem>>(
-      `/api/v1/golden-sets/${id}/items${buildQueryString(params ?? {})}`
+      `/api/v1/golden-sets/${id}/items${toQueryString(params ?? {})}`
     ),
 
   addItem: (id: string, body: GoldenItemCreateFormData) =>
@@ -401,7 +401,7 @@ export const goldenSetsApi = {
 export const evaluationsApi = {
   listRuns: (params?: { offset?: number; limit?: number; status?: string }) =>
     api.get<PagedResponse<EvaluationRun>>(
-      `/api/v1/evaluations${buildQueryString(params ?? {})}`
+      `/api/v1/evaluations${toQueryString(params ?? {})}`
     ),
 
   get: (evalId: string) =>
@@ -411,7 +411,7 @@ export const evaluationsApi = {
 
   compare: (evalId1: string, evalId2: string) =>
     api.get<SingleResponse<EvaluationCompareResult>>(
-      `/api/v1/evaluations/${evalId1}/compare${buildQueryString({ eval_id2: evalId2 })}`
+      `/api/v1/evaluations/${evalId1}/compare${toQueryString({ eval_id2: evalId2 })}`
     ),
 };
 
@@ -424,12 +424,12 @@ export const extractionSchemasApi = {
     offset?: number;
   }) =>
     api.get<PagedResponse<ExtractionSchema>>(
-      `/api/v1/extraction-schemas${buildQueryString(params ?? {})}`
+      `/api/v1/extraction-schemas${toQueryString(params ?? {})}`
     ),
 
   get: (docTypeCode: string, params?: { include_deprecated?: boolean }) =>
     api.get<SingleResponse<ExtractionSchema>>(
-      `/api/v1/extraction-schemas/${encodeURIComponent(docTypeCode)}${buildQueryString(params ?? {})}`
+      `/api/v1/extraction-schemas/${encodeURIComponent(docTypeCode)}${toQueryString(params ?? {})}`
     ),
 
   getVersions: (
@@ -443,7 +443,7 @@ export const extractionSchemasApi = {
     }
   ) =>
     api.get<PagedResponse<ExtractionSchemaVersion>>(
-      `/api/v1/extraction-schemas/${encodeURIComponent(docTypeCode)}/versions${buildQueryString(params ?? {})}`
+      `/api/v1/extraction-schemas/${encodeURIComponent(docTypeCode)}/versions${toQueryString(params ?? {})}`
     ),
 
   // P4-A: 서버 정본 버전 diff.
@@ -457,7 +457,7 @@ export const extractionSchemasApi = {
     }
   ) =>
     api.get<SingleResponse<ExtractionSchemaDiff>>(
-      `/api/v1/extraction-schemas/${encodeURIComponent(docTypeCode)}/versions/diff${buildQueryString(params)}`
+      `/api/v1/extraction-schemas/${encodeURIComponent(docTypeCode)}/versions/diff${toQueryString(params)}`
     ),
 
   // P4-B: 특정 버전으로 되돌리기 (새 버전 생성).
@@ -563,12 +563,12 @@ export const extractionQueueApi = {
     scope_profile_id?: string;
   }) =>
     api.get<ExtractionQueuePagedResponse<ExtractionResult>>(
-      `/api/v1/admin/extraction-results${buildQueryString(params ?? {})}`
+      `/api/v1/admin/extraction-results${toQueryString(params ?? {})}`
     ),
 
   get: (id: string, params?: { scope_profile_id?: string }) =>
     api.get<SingleResponse<ExtractionResultDetail>>(
-      `/api/v1/admin/extraction-results/${id}${buildQueryString(params ?? {})}`
+      `/api/v1/admin/extraction-results/${id}${toQueryString(params ?? {})}`
     ),
 
   approve: (id: string, body?: ExtractionQueueApproveBody) =>

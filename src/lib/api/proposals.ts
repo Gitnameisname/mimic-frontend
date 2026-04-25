@@ -1,3 +1,4 @@
+import { toQueryString } from "@/lib/utils/url";
 import { api } from "./client";
 
 export interface AgentProposal {
@@ -51,11 +52,13 @@ export const proposalsApi = {
     page?: number;
     page_size?: number;
   }): Promise<ProposalListResponse> => {
-    const qs = new URLSearchParams();
-    if (params?.status) qs.set("status", params.status);
-    if (params?.page) qs.set("page", String(params.page));
-    if (params?.page_size) qs.set("page_size", String(params.page_size));
-    const raw = await api.get<unknown>(`/api/v1/my/proposals?${qs}`);
+    // 기존 시맨틱 보존: page=0 / page_size=0 도 truthy-skip 했으므로 || undefined 로 좁힌다.
+    const path = `/api/v1/my/proposals${toQueryString({
+      status: params?.status,
+      page: params?.page || undefined,
+      page_size: params?.page_size || undefined,
+    })}`;
+    const raw = await api.get<unknown>(path);
     return extractData<ProposalListResponse>(raw);
   },
 
@@ -73,20 +76,24 @@ export const proposalsApi = {
     page?: number;
     page_size?: number;
   }): Promise<ProposalListResponse> => {
-    const qs = new URLSearchParams();
-    if (params?.status) qs.set("status", params.status);
-    if (params?.agent_id) qs.set("agent_id", params.agent_id);
-    if (params?.proposal_type) qs.set("proposal_type", params.proposal_type);
-    if (params?.page) qs.set("page", String(params.page));
-    if (params?.page_size) qs.set("page_size", String(params.page_size));
-    const raw = await api.get<unknown>(`/api/v1/admin/proposals?${qs}`);
+    // 기존 시맨틱 보존: page=0 / page_size=0 도 truthy-skip.
+    const path = `/api/v1/admin/proposals${toQueryString({
+      status: params?.status,
+      agent_id: params?.agent_id,
+      proposal_type: params?.proposal_type,
+      page: params?.page || undefined,
+      page_size: params?.page_size || undefined,
+    })}`;
+    const raw = await api.get<unknown>(path);
     return extractData<ProposalListResponse>(raw);
   },
 
   // 통계 (Admin)
   statsAdmin: async (agentId?: string): Promise<ProposalStats> => {
-    const qs = agentId ? `?agent_id=${agentId}` : "";
-    const raw = await api.get<unknown>(`/api/v1/admin/proposals/stats${qs}`);
+    // 기존 시맨틱: agentId 가 falsy 면 ? 자체를 omit.
+    // toQueryString 도 undefined/"" 를 omit 하고 모두 omit 시 "" 를 반환.
+    const path = `/api/v1/admin/proposals/stats${toQueryString({ agent_id: agentId })}`;
+    const raw = await api.get<unknown>(path);
     return extractData<ProposalStats>(raw);
   },
 
