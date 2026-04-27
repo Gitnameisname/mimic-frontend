@@ -142,3 +142,101 @@ const utils_1 = require("../src/lib/utils");
         strict_1.default.match(tokens_1.ALERT_ERROR_DARK, /red/);
     });
 });
+// ===========================================================================
+// F-N1 (2026-04-25) — 폼 인라인 에러 토큰 (FORM_ERROR_*)
+// ===========================================================================
+const tokens_2 = require("../src/lib/styles/tokens");
+(0, node_test_1.describe)("FORM_ERROR_INLINE (가장 흔한 react-hook-form 패턴)", () => {
+    (0, node_test_1.test)("핵심 토큰 mt-1 / text-xs / text-red-600", () => {
+        strict_1.default.match(tokens_2.FORM_ERROR_INLINE, /\bmt-1\b/);
+        strict_1.default.match(tokens_2.FORM_ERROR_INLINE, /\btext-xs\b/);
+        strict_1.default.match(tokens_2.FORM_ERROR_INLINE, /\btext-red-600\b/);
+    });
+    (0, node_test_1.test)("background / border 미포함 (인라인이므로 박스 아님)", () => {
+        strict_1.default.doesNotMatch(tokens_2.FORM_ERROR_INLINE, /\bbg-/);
+        strict_1.default.doesNotMatch(tokens_2.FORM_ERROR_INLINE, /\bborder\b/);
+    });
+    (0, node_test_1.test)("font-medium 미포함 (STRONG 변형과 구분)", () => {
+        strict_1.default.doesNotMatch(tokens_2.FORM_ERROR_INLINE, /\bfont-medium\b/);
+    });
+});
+(0, node_test_1.describe)("FORM_ERROR_INLINE_STRONG (auth 컴포넌트 변형)", () => {
+    (0, node_test_1.test)("mt-1.5 + font-medium 포함 (강조 변형)", () => {
+        strict_1.default.match(tokens_2.FORM_ERROR_INLINE_STRONG, /\bmt-1\.5\b/);
+        strict_1.default.match(tokens_2.FORM_ERROR_INLINE_STRONG, /\bfont-medium\b/);
+        strict_1.default.match(tokens_2.FORM_ERROR_INLINE_STRONG, /\btext-red-600\b/);
+    });
+    (0, node_test_1.test)("INLINE 과 다름 (font-medium 차이)", () => {
+        strict_1.default.notEqual(tokens_2.FORM_ERROR_INLINE, tokens_2.FORM_ERROR_INLINE_STRONG);
+    });
+});
+(0, node_test_1.describe)("FORM_ERROR_BANNER (mutation isError 배너)", () => {
+    (0, node_test_1.test)("mb-3 + text-xs + text-red-600", () => {
+        strict_1.default.match(tokens_2.FORM_ERROR_BANNER, /\bmb-3\b/);
+        strict_1.default.match(tokens_2.FORM_ERROR_BANNER, /\btext-xs\b/);
+        strict_1.default.match(tokens_2.FORM_ERROR_BANNER, /\btext-red-600\b/);
+    });
+    (0, node_test_1.test)("INLINE 과 다른 마진 (mt vs mb)", () => {
+        strict_1.default.doesNotMatch(tokens_2.FORM_ERROR_BANNER, /\bmt-/);
+    });
+});
+(0, node_test_1.describe)("FORM_ERROR_BOX (admin 컴팩트 박스)", () => {
+    (0, node_test_1.test)("핵심 토큰 text-sm / text-red-600 / bg-red-50 / px-3 / py-2 / rounded-lg", () => {
+        for (const tok of ["text-sm", "text-red-600", "bg-red-50", "px-3", "py-2", "rounded-lg"]) {
+            strict_1.default.match(tokens_2.FORM_ERROR_BOX, new RegExp(`\\b${tok.replace(/-/g, "\\-")}\\b`), `${tok} 누락`);
+        }
+    });
+    (0, node_test_1.test)("border / animate 없음 (ALERT_ERROR_COMPACT 와 구분)", () => {
+        strict_1.default.doesNotMatch(tokens_2.FORM_ERROR_BOX, /\bborder\b/);
+        strict_1.default.doesNotMatch(tokens_2.FORM_ERROR_BOX, /\banimate-in\b/);
+    });
+});
+(0, node_test_1.describe)("FORM_ERROR_* 다크 토큰", () => {
+    const darkTokens = {
+        FORM_ERROR_INLINE_DARK: tokens_2.FORM_ERROR_INLINE_DARK,
+        FORM_ERROR_INLINE_STRONG_DARK: tokens_2.FORM_ERROR_INLINE_STRONG_DARK,
+        FORM_ERROR_BANNER_DARK: tokens_2.FORM_ERROR_BANNER_DARK,
+        FORM_ERROR_BOX_DARK: tokens_2.FORM_ERROR_BOX_DARK,
+    };
+    for (const [name, v] of Object.entries(darkTokens)) {
+        (0, node_test_1.test)(`${name}: dark: 접두 포함`, () => {
+            strict_1.default.match(v, /\bdark:/);
+        });
+        (0, node_test_1.test)(`${name}: red 계열`, () => {
+            strict_1.default.match(v, /red/);
+        });
+    }
+    (0, node_test_1.test)("INLINE/STRONG/BANNER 다크는 단순 색상만 (background 없음)", () => {
+        for (const v of [tokens_2.FORM_ERROR_INLINE_DARK, tokens_2.FORM_ERROR_INLINE_STRONG_DARK, tokens_2.FORM_ERROR_BANNER_DARK]) {
+            strict_1.default.doesNotMatch(v, /\bdark:bg-/);
+        }
+    });
+    (0, node_test_1.test)("BOX 다크는 background 포함", () => {
+        strict_1.default.match(tokens_2.FORM_ERROR_BOX_DARK, /\bdark:bg-/);
+    });
+});
+(0, node_test_1.describe)("FORM_ERROR_* + cn 합성", () => {
+    (0, node_test_1.test)("INLINE + role attribute 호환 (className 만 합성)", () => {
+        const merged = (0, utils_1.cn)(tokens_2.FORM_ERROR_INLINE, tokens_2.FORM_ERROR_INLINE_DARK);
+        strict_1.default.match(merged, /mt-1/);
+        strict_1.default.match(merged, /dark:text-red-300/);
+    });
+    (0, node_test_1.test)("BOX + 추가 padding 변형 가능", () => {
+        const merged = (0, utils_1.cn)(tokens_2.FORM_ERROR_BOX, "py-3");
+        // tailwind-merge 가 py-2 → py-3 로 덮어씌움
+        strict_1.default.match(merged, /py-3/);
+    });
+});
+(0, node_test_1.describe)("FORM_ERROR_* 토큰 일관성", () => {
+    (0, node_test_1.test)("4 라이트 토큰 모두 비공백 string", () => {
+        for (const v of [tokens_2.FORM_ERROR_INLINE, tokens_2.FORM_ERROR_INLINE_STRONG, tokens_2.FORM_ERROR_BANNER, tokens_2.FORM_ERROR_BOX]) {
+            strict_1.default.equal(typeof v, "string");
+            strict_1.default.ok(v.trim().length > 0);
+        }
+    });
+    (0, node_test_1.test)("4 라이트 토큰 모두 text-red-600 공유", () => {
+        for (const v of [tokens_2.FORM_ERROR_INLINE, tokens_2.FORM_ERROR_INLINE_STRONG, tokens_2.FORM_ERROR_BANNER, tokens_2.FORM_ERROR_BOX]) {
+            strict_1.default.match(v, /\btext-red-600\b/);
+        }
+    });
+});

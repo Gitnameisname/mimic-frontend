@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useUiStore } from "@/stores/uiStore";
 import { cn } from "@/lib/utils";
+// S3 Phase 3 FG 3-3: 알림 종 아이콘
+import { NotificationsBell } from "@/components/notifications/NotificationsBell";
+import { useAuthz } from "@/hooks/useAuthz";
 
 /**
  * 상단 헤더
@@ -14,6 +17,8 @@ import { cn } from "@/lib/utils";
 export function Header() {
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const router = useRouter();
+  const { actorId } = useAuthz();
+  const isAuthenticated = Boolean(actorId);
 
   const [searchValue, setSearchValue] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
@@ -135,6 +140,9 @@ export function Header() {
           )}
         </div>
       </form>
+
+      {/* S3 Phase 3 FG 3-3: 알림 종 아이콘 (인증된 사용자만) */}
+      <NotificationsBell enabled={isAuthenticated} />
     </header>
   );
 }

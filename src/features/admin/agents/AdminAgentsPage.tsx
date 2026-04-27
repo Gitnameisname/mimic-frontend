@@ -8,6 +8,7 @@ import { z } from "zod";
 import { agentsApi } from "@/lib/api/s2admin";
 import type { Agent, AgentDetail, AgentRateLimits } from "@/types/s2admin";
 import { cn } from "@/lib/utils";
+import { FORM_ERROR_INLINE, FORM_ERROR_BANNER } from "@/lib/styles/tokens";
 
 // ─── 상태 배지 ───
 
@@ -146,7 +147,7 @@ function RateLimitModal({
             </div>
           ))}
         </div>
-        {mut.isError && <p className="mb-3 text-xs text-red-600" role="alert">저장 중 오류가 발생했습니다.</p>}
+        {mut.isError && <p className={FORM_ERROR_BANNER} role="alert">저장 중 오류가 발생했습니다.</p>}
         <div className="flex gap-3">
           <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 min-h-[44px]">취소</button>
           <button type="button" disabled={mut.isPending} onClick={() => mut.mutate()} className="flex-1 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 min-h-[44px] disabled:opacity-50">
@@ -444,14 +445,14 @@ function CreateAgentModal({ onClose, onCreated }: { onClose: () => void; onCreat
                 이름 <span className="text-red-500" aria-hidden="true">*</span>
               </label>
               <input id="agent-name" type="text" {...register("name")} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="에이전트 이름" aria-required="true" />
-              {errors.name && <p className="mt-1 text-xs text-red-600" role="alert">{errors.name.message}</p>}
+              {errors.name && <p className={FORM_ERROR_INLINE} role="alert">{errors.name.message}</p>}
             </div>
             <div>
               <label htmlFor="agent-desc" className="block text-sm font-semibold text-gray-700 mb-1.5">설명</label>
               <textarea id="agent-desc" {...register("description")} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" placeholder="에이전트 설명..." />
             </div>
           </div>
-          {mut.isError && <p className="mb-3 text-xs text-red-600" role="alert">생성 중 오류가 발생했습니다.</p>}
+          {mut.isError && <p className={FORM_ERROR_BANNER} role="alert">생성 중 오류가 발생했습니다.</p>}
           <div className="flex gap-3">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 min-h-[44px]">취소</button>
             <button type="submit" disabled={isSubmitting || mut.isPending} className="flex-1 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 min-h-[44px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">

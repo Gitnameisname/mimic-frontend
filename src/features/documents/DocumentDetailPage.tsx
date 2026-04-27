@@ -21,6 +21,10 @@ import { AgentProposalsTab } from "./AgentProposalsTab";
 import { DocumentAssignControls } from "@/features/explore/DocumentAssignControls";
 // S3 Phase 2 FG 2-2: 문서 상세 태그 편집 위젯
 import { TagChipsEditor } from "@/features/tags/TagChipsEditor";
+// S3 Phase 3 FG 3-1: Contributors (작성자/편집자/승인자/열람자) 패널
+import { ContributorsPanel } from "./ContributorsPanel";
+// S3 Phase 3 FG 3-3: 인라인 주석 패널
+import { AnnotationsPanel } from "./AnnotationsPanel";
 // FG 2-2 UX1: inline chip 클릭 시 편집 모드로 이동하며 해당 hashtag 위치 포커스
 import { useRouter } from "next/navigation";
 import { formatDate, relativeTime } from "@/lib/utils";
@@ -225,6 +229,16 @@ export function DocumentDetailPage({ documentId }: Props) {
                   );
                 }}
               />
+            </div>
+
+            {/* S3 Phase 3 FG 3-1: Contributors 패널 (collapsed by default) */}
+            <div className="mt-3">
+              <ContributorsPanel documentId={documentId} />
+            </div>
+
+            {/* S3 Phase 3 FG 3-3: 인라인 주석 패널 (collapsed by default) */}
+            <div className="mt-3">
+              <AnnotationsPanel documentId={documentId} />
             </div>
           </div>
 

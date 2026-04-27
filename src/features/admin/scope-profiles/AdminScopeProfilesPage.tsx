@@ -8,6 +8,7 @@ import { z } from "zod";
 import { scopeProfilesApi } from "@/lib/api/s2admin";
 import type { ScopeProfile, ScopeProfileDetail, ScopeEntry, FilterExpression } from "@/types/s2admin";
 import { cn } from "@/lib/utils";
+import { FORM_ERROR_INLINE, FORM_ERROR_BANNER } from "@/lib/styles/tokens";
 
 // ─── ACL 필터 시각 빌더 ───
 
@@ -239,7 +240,18 @@ function ScopeProfileDetailPanel({
     },
   });
 
+  // S3 Phase 3 FG 3-2 (2026-04-27): expose_viewers 토글
+  const updateSettingsMut = useMutation({
+    mutationFn: (next: { expose_viewers: boolean }) =>
+      scopeProfilesApi.update(profile.id, { settings: next }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "scope-profiles", profile.id] });
+      qc.invalidateQueries({ queryKey: ["admin", "scope-profiles"] });
+    },
+  });
+
   const detail: ScopeProfileDetail | undefined = detailQ.data?.data;
+  const exposeViewers = Boolean(detail?.settings?.expose_viewers);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40">
@@ -261,6 +273,40 @@ function ScopeProfileDetailPanel({
 
         <div className="flex-1 p-5 space-y-5">
           {profile.description && <p className="text-sm text-gray-600">{profile.description}</p>}
+
+          {/* S3 Phase 3 FG 3-2: 운영 설정 — viewers 노출 토글 */}
+          <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+            <h3 className="text-sm font-bold text-gray-900 mb-2">운영 설정</h3>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={exposeViewers}
+                disabled={detailQ.isLoading || updateSettingsMut.isPending}
+                onChange={(e) =>
+                  updateSettingsMut.mutate({ expose_viewers: e.target.checked })
+                }
+                className="mt-0.5 w-4 h-4"
+                aria-label="이 Scope 사용자에게 다른 사용자의 열람 흔적을 표시"
+              />
+              <div className="flex-1">
+                <div className="text-sm font-medium text-gray-900">
+                  이 Scope 사용자에게 다른 사용자의 열람 흔적을 표시
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  off (기본값) 시 Contributors 패널의 &quot;최근 열람자&quot; 섹션이 숨겨집니다.
+                  설정 변경은 최대 30 초 안에 반영됩니다.
+                </div>
+                {updateSettingsMut.isError && (
+                  <div className="text-xs text-red-600 mt-1">
+                    설정을 저장하지 못했습니다. 권한을 확인하세요.
+                  </div>
+                )}
+                {updateSettingsMut.isSuccess && (
+                  <div className="text-xs text-green-700 mt-1">저장되었습니다.</div>
+                )}
+              </div>
+            </label>
+          </div>
 
           {/* Scope 목록 */}
           <div>
@@ -371,14 +417,14 @@ function CreateProfileModal({ onClose, onCreated }: { onClose: () => void; onCre
                 이름 <span className="text-red-500" aria-hidden="true">*</span>
               </label>
               <input id="sp-name" type="text" {...register("name")} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="예: team_read_only" aria-required="true" />
-              {errors.name && <p className="mt-1 text-xs text-red-600" role="alert">{errors.name.message}</p>}
+              {errors.name && <p className={FORM_ERROR_INLINE} role="alert">{errors.name.message}</p>}
             </div>
             <div>
               <label htmlFor="sp-desc" className="block text-sm font-semibold text-gray-700 mb-1.5">설명</label>
               <textarea id="sp-desc" {...register("description")} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Profile 설명..." />
             </div>
           </div>
-          {mut.isError && <p className="mb-3 text-xs text-red-600" role="alert">생성 중 오류가 발생했습니다.</p>}
+          {mut.isError && <p className={FORM_ERROR_BANNER} role="alert">생성 중 오류가 발생했습니다.</p>}
           <div className="flex gap-3">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 min-h-[44px]">취소</button>
             <button type="submit" disabled={isSubmitting || mut.isPending} className="flex-1 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 min-h-[44px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">

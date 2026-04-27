@@ -196,16 +196,34 @@ export const scopeProfilesApi = {
       `/api/v1/admin/scope-profiles/${id}`
     ),
 
-  create: (body: { name: string; description?: string }) =>
+  create: (
+    body: {
+      name: string;
+      description?: string;
+      // S3 Phase 3 FG 3-2 (2026-04-27)
+      settings?: { expose_viewers: boolean };
+    },
+  ) =>
     api.post<SingleResponse<ScopeProfile>>(
       "/api/v1/admin/scope-profiles",
-      body
+      body,
     ),
 
-  update: (id: string, body: { name?: string; description?: string }) =>
-    api.patch<SingleResponse<ScopeProfile>>(
+  /**
+   * Scope Profile 수정. 백엔드는 PUT verb 를 사용 (전체 PATCH 시맨틱 — 명시되지 않은 필드는 미수정).
+   * S3 Phase 3 FG 3-2 (2026-04-27): settings (expose_viewers 등) 부분 갱신 추가.
+   */
+  update: (
+    id: string,
+    body: {
+      name?: string;
+      description?: string;
+      settings?: { expose_viewers: boolean };
+    },
+  ) =>
+    api.put<SingleResponse<ScopeProfile>>(
       `/api/v1/admin/scope-profiles/${id}`,
-      body
+      body,
     ),
 
   delete: (id: string) =>

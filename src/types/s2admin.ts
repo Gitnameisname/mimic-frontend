@@ -196,6 +196,14 @@ export interface ScopeProfile {
   api_keys_count: number;
   created_at: string;
   updated_at: string;
+  // S3 Phase 3 FG 3-2 (2026-04-27): 운영 설정. 응답에 항상 포함됨 (default false).
+  settings?: ScopeProfileSettings;
+}
+
+// S3 Phase 3 FG 3-2 (2026-04-27)
+export interface ScopeProfileSettings {
+  /** Contributors 패널의 viewers 섹션 노출 정책. False (기본) 면 정책 게이트 강제 false. */
+  expose_viewers: boolean;
 }
 
 export interface ScopeEntry {

@@ -9,6 +9,7 @@ import { promptsApi } from "@/lib/api/s2admin";
 import type { Prompt, PromptVersion } from "@/types/s2admin";
 import { cn } from "@/lib/utils";
 import { formatDateOnly } from "@/lib/utils/date";
+import { FORM_ERROR_INLINE, FORM_ERROR_BANNER } from "@/lib/styles/tokens";
 
 // ─── 모달: 프롬프트 생성 ───
 
@@ -60,7 +61,7 @@ function CreatePromptModal({ onClose, onCreated }: { onClose: () => void; onCrea
                 aria-describedby={errors.name ? "prompt-name-err" : undefined}
               />
               {errors.name && (
-                <p id="prompt-name-err" className="mt-1 text-xs text-red-600" role="alert">{errors.name.message}</p>
+                <p id="prompt-name-err" className={FORM_ERROR_INLINE} role="alert">{errors.name.message}</p>
               )}
             </div>
             <div>
@@ -89,12 +90,12 @@ function CreatePromptModal({ onClose, onCreated }: { onClose: () => void; onCrea
                 aria-describedby={errors.content ? "prompt-content-err" : undefined}
               />
               {errors.content && (
-                <p id="prompt-content-err" className="mt-1 text-xs text-red-600" role="alert">{errors.content.message}</p>
+                <p id="prompt-content-err" className={FORM_ERROR_INLINE} role="alert">{errors.content.message}</p>
               )}
             </div>
           </div>
           {mut.isError && (
-            <p className="mb-3 text-xs text-red-600" role="alert">저장 중 오류가 발생했습니다.</p>
+            <p className={FORM_ERROR_BANNER} role="alert">저장 중 오류가 발생했습니다.</p>
           )}
           <div className="flex gap-3">
             <button

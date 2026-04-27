@@ -173,3 +173,128 @@ describe("다크모드 토큰", () => {
     assert.match(ALERT_ERROR_DARK, /red/);
   });
 });
+
+// ===========================================================================
+// F-N1 (2026-04-25) — 폼 인라인 에러 토큰 (FORM_ERROR_*)
+// ===========================================================================
+
+import {
+  FORM_ERROR_INLINE,
+  FORM_ERROR_INLINE_STRONG,
+  FORM_ERROR_BANNER,
+  FORM_ERROR_BOX,
+  FORM_ERROR_INLINE_DARK,
+  FORM_ERROR_INLINE_STRONG_DARK,
+  FORM_ERROR_BANNER_DARK,
+  FORM_ERROR_BOX_DARK,
+} from "../src/lib/styles/tokens";
+
+describe("FORM_ERROR_INLINE (가장 흔한 react-hook-form 패턴)", () => {
+  test("핵심 토큰 mt-1 / text-xs / text-red-600", () => {
+    assert.match(FORM_ERROR_INLINE, /\bmt-1\b/);
+    assert.match(FORM_ERROR_INLINE, /\btext-xs\b/);
+    assert.match(FORM_ERROR_INLINE, /\btext-red-600\b/);
+  });
+
+  test("background / border 미포함 (인라인이므로 박스 아님)", () => {
+    assert.doesNotMatch(FORM_ERROR_INLINE, /\bbg-/);
+    assert.doesNotMatch(FORM_ERROR_INLINE, /\bborder\b/);
+  });
+
+  test("font-medium 미포함 (STRONG 변형과 구분)", () => {
+    assert.doesNotMatch(FORM_ERROR_INLINE, /\bfont-medium\b/);
+  });
+});
+
+describe("FORM_ERROR_INLINE_STRONG (auth 컴포넌트 변형)", () => {
+  test("mt-1.5 + font-medium 포함 (강조 변형)", () => {
+    assert.match(FORM_ERROR_INLINE_STRONG, /\bmt-1\.5\b/);
+    assert.match(FORM_ERROR_INLINE_STRONG, /\bfont-medium\b/);
+    assert.match(FORM_ERROR_INLINE_STRONG, /\btext-red-600\b/);
+  });
+
+  test("INLINE 과 다름 (font-medium 차이)", () => {
+    assert.notEqual(FORM_ERROR_INLINE, FORM_ERROR_INLINE_STRONG);
+  });
+});
+
+describe("FORM_ERROR_BANNER (mutation isError 배너)", () => {
+  test("mb-3 + text-xs + text-red-600", () => {
+    assert.match(FORM_ERROR_BANNER, /\bmb-3\b/);
+    assert.match(FORM_ERROR_BANNER, /\btext-xs\b/);
+    assert.match(FORM_ERROR_BANNER, /\btext-red-600\b/);
+  });
+
+  test("INLINE 과 다른 마진 (mt vs mb)", () => {
+    assert.doesNotMatch(FORM_ERROR_BANNER, /\bmt-/);
+  });
+});
+
+describe("FORM_ERROR_BOX (admin 컴팩트 박스)", () => {
+  test("핵심 토큰 text-sm / text-red-600 / bg-red-50 / px-3 / py-2 / rounded-lg", () => {
+    for (const tok of ["text-sm", "text-red-600", "bg-red-50", "px-3", "py-2", "rounded-lg"]) {
+      assert.match(FORM_ERROR_BOX, new RegExp(`\\b${tok.replace(/-/g, "\\-")}\\b`), `${tok} 누락`);
+    }
+  });
+
+  test("border / animate 없음 (ALERT_ERROR_COMPACT 와 구분)", () => {
+    assert.doesNotMatch(FORM_ERROR_BOX, /\bborder\b/);
+    assert.doesNotMatch(FORM_ERROR_BOX, /\banimate-in\b/);
+  });
+});
+
+describe("FORM_ERROR_* 다크 토큰", () => {
+  const darkTokens = {
+    FORM_ERROR_INLINE_DARK,
+    FORM_ERROR_INLINE_STRONG_DARK,
+    FORM_ERROR_BANNER_DARK,
+    FORM_ERROR_BOX_DARK,
+  };
+  for (const [name, v] of Object.entries(darkTokens)) {
+    test(`${name}: dark: 접두 포함`, () => {
+      assert.match(v, /\bdark:/);
+    });
+    test(`${name}: red 계열`, () => {
+      assert.match(v, /red/);
+    });
+  }
+
+  test("INLINE/STRONG/BANNER 다크는 단순 색상만 (background 없음)", () => {
+    for (const v of [FORM_ERROR_INLINE_DARK, FORM_ERROR_INLINE_STRONG_DARK, FORM_ERROR_BANNER_DARK]) {
+      assert.doesNotMatch(v, /\bdark:bg-/);
+    }
+  });
+
+  test("BOX 다크는 background 포함", () => {
+    assert.match(FORM_ERROR_BOX_DARK, /\bdark:bg-/);
+  });
+});
+
+describe("FORM_ERROR_* + cn 합성", () => {
+  test("INLINE + role attribute 호환 (className 만 합성)", () => {
+    const merged = cn(FORM_ERROR_INLINE, FORM_ERROR_INLINE_DARK);
+    assert.match(merged, /mt-1/);
+    assert.match(merged, /dark:text-red-300/);
+  });
+
+  test("BOX + 추가 padding 변형 가능", () => {
+    const merged = cn(FORM_ERROR_BOX, "py-3");
+    // tailwind-merge 가 py-2 → py-3 로 덮어씌움
+    assert.match(merged, /py-3/);
+  });
+});
+
+describe("FORM_ERROR_* 토큰 일관성", () => {
+  test("4 라이트 토큰 모두 비공백 string", () => {
+    for (const v of [FORM_ERROR_INLINE, FORM_ERROR_INLINE_STRONG, FORM_ERROR_BANNER, FORM_ERROR_BOX]) {
+      assert.equal(typeof v, "string");
+      assert.ok(v.trim().length > 0);
+    }
+  });
+
+  test("4 라이트 토큰 모두 text-red-600 공유", () => {
+    for (const v of [FORM_ERROR_INLINE, FORM_ERROR_INLINE_STRONG, FORM_ERROR_BANNER, FORM_ERROR_BOX]) {
+      assert.match(v, /\btext-red-600\b/);
+    }
+  });
+});

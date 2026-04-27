@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useExtractionStore } from "@/stores/extractionStore";
 import { cn } from "@/lib/utils";
+import { FORM_ERROR_INLINE } from "@/lib/styles/tokens";
 import type { ExtractionConfidenceScore } from "@/types/extraction";
 import { isString } from "@/lib/utils/guards";
 
@@ -124,7 +125,7 @@ export function FieldEditor({
             spellCheck={false}
           />
           {jsonError && (
-            <p id={`json-error-${fieldName}`} role="alert" className="text-xs text-red-600 mt-1">
+            <p id={`json-error-${fieldName}`} role="alert" className={FORM_ERROR_INLINE}>
               {jsonError}
             </p>
           )}

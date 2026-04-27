@@ -106,3 +106,73 @@ export const ALERT_INFO_DARK =
 
 export const ALERT_SUCCESS_DARK =
   "dark:bg-green-950/40 dark:border-green-900 dark:text-green-200";
+
+// ===========================================================================
+// F-N1 (2026-04-25) — 폼 인라인 에러 토큰 (FORM_ERROR_*)
+// ===========================================================================
+//
+// 도입 배경:
+//   - 폼 필드 옆 인라인 에러 (`<p className="text-xs text-red-600 mt-1" role="alert">{errors.x.message}</p>`)
+//     변형 패턴이 45+ 사이트 분산. 4 캐논 + 도메인 변형 (auth font-medium / mutation
+//     배너 / 컴팩트 박스).
+//   - ALERT_ERROR / ALERT_ERROR_COMPACT 와는 다른 계층:
+//       * ALERT_* — role="alert" 알림 박스 (rounded-lg, border, padding 큼)
+//       * FORM_ERROR_* — 폼 필드 인접 인라인 에러 (border 없음, 작은 spacing)
+//
+// 사용 패턴:
+//   <p role="alert" className={FORM_ERROR_INLINE}>{errors.name?.message}</p>
+//   <p role="alert" className={cn(FORM_ERROR_INLINE, FORM_ERROR_INLINE_DARK)}>...</p>
+//
+// 비대상 (별 라운드):
+//   - 결과 상세형 에러 (`text-xs text-red-700 mt-1` — golden-sets/evaluations/ai-platform)
+//     도메인 컨텍스트가 다르고 background 변형이 잦음.
+//   - 인터랙티브 요소 (`text-xs text-red-600 hover:bg-red-50`) — 버튼/링크.
+
+/**
+ * 폼 필드 인라인 에러 — react-hook-form `errors.x.message` 등.
+ * 가장 흔한 패턴 (8+ 사이트). border / background 없음.
+ *
+ * @example
+ * <p id={`${id}-err`} role="alert" className={FORM_ERROR_INLINE}>
+ *   {errors.name?.message}
+ * </p>
+ */
+export const FORM_ERROR_INLINE = "mt-1 text-xs text-red-600";
+
+/**
+ * 폼 필드 인라인 에러 — strong 변형 (auth 컴포넌트).
+ * `mt-1.5` + `font-medium` — 단순 INLINE 보다 약간 강조.
+ * AuthInput / PasswordInput 의 폼 필드 에러에 사용.
+ */
+export const FORM_ERROR_INLINE_STRONG =
+  "mt-1.5 text-xs text-red-600 font-medium";
+
+/**
+ * 폼 mutation 에러 배너 — 폼 상단/하단 mutation isError 시 표시.
+ * `<p role="alert" className={FORM_ERROR_BANNER}>저장 중 오류가 발생했습니다.</p>`
+ */
+export const FORM_ERROR_BANNER = "mb-3 text-xs text-red-600";
+
+/**
+ * 폼 에러 컴팩트 박스 — 박스형이지만 ALERT_ERROR_COMPACT 보다 작음.
+ * `bg-red-50` + `rounded-lg` 만 추가 (border/animation 없음).
+ * admin 페이지 단순 에러 표시 (orgs/users/document-types/ai-platform 등 7+ 사이트).
+ *
+ * @example
+ * {error && <p className={FORM_ERROR_BOX}>{error}</p>}
+ */
+export const FORM_ERROR_BOX =
+  "text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg";
+
+// ---------------------------------------------------------------------------
+// 다크모드 변형 — preferences.theme 토글 호환 (cn 합성)
+// ---------------------------------------------------------------------------
+
+export const FORM_ERROR_INLINE_DARK = "dark:text-red-300";
+
+export const FORM_ERROR_INLINE_STRONG_DARK = "dark:text-red-300";
+
+export const FORM_ERROR_BANNER_DARK = "dark:text-red-300";
+
+export const FORM_ERROR_BOX_DARK =
+  "dark:bg-red-950/40 dark:text-red-200";

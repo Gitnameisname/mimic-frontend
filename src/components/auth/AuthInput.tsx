@@ -5,6 +5,7 @@
  */
 
 import { cn } from "@/lib/utils";
+import { FORM_ERROR_INLINE_STRONG } from "@/lib/styles/tokens";
 
 interface AuthInputProps {
   id?: string;
@@ -49,7 +50,7 @@ export function AuthInput({
         )}
       />
       {error && (
-        <p id={`${id}-error`} className="text-xs text-red-600 mt-1.5 font-medium">
+        <p id={`${id}-error`} className={FORM_ERROR_INLINE_STRONG}>
           {error}
         </p>
       )}
