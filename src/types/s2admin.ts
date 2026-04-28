@@ -198,6 +198,9 @@ export interface ScopeProfile {
   updated_at: string;
   // S3 Phase 3 FG 3-2 (2026-04-27): 운영 설정. 응답에 항상 포함됨 (default false).
   settings?: ScopeProfileSettings;
+  // S3 Phase 4 FG 4-0 §2.1.6 (2026-04-28): MCP tool-level ACL 화이트리스트.
+  // 빈 배열 = default-deny (모든 도구 거부). 등록 가능 도구 이름은 백엔드 known_tool_names() 참조.
+  allowed_tools?: string[];
 }
 
 // S3 Phase 3 FG 3-2 (2026-04-27)

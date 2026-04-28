@@ -212,6 +212,9 @@ export const scopeProfilesApi = {
   /**
    * Scope Profile 수정. 백엔드는 PUT verb 를 사용 (전체 PATCH 시맨틱 — 명시되지 않은 필드는 미수정).
    * S3 Phase 3 FG 3-2 (2026-04-27): settings (expose_viewers 등) 부분 갱신 추가.
+   * S3 Phase 4 FG 4-0 §2.1.6 (2026-04-28): allowed_tools 전체 교체 (PUT 시맨틱).
+   *   - undefined 미수정. 빈 배열 [] 명시 시 default-deny 로 재설정.
+   *   - 백엔드 known_tool_names() 외 도구 이름은 422 응답.
    */
   update: (
     id: string,
@@ -219,6 +222,7 @@ export const scopeProfilesApi = {
       name?: string;
       description?: string;
       settings?: { expose_viewers: boolean };
+      allowed_tools?: string[];
     },
   ) =>
     api.put<SingleResponse<ScopeProfile>>(
@@ -247,6 +251,42 @@ export const scopeProfilesApi = {
     api.delete<SingleResponse<null>>(
       `/api/v1/admin/scope-profiles/${id}/scopes/${scopeName}`
     ),
+};
+
+// S3 Phase 4 FG 4-5 (2026-04-28): MCP 도구 manifest (운영자 전용)
+
+export interface AdminMcpToolEntry {
+  name: string;
+  description: string;
+  risk_tier: "L0" | "L1" | "L2" | "L3" | "L4";
+  maturity: "stable" | "beta" | "experimental" | "disabled" | "forbidden";
+  status: "enabled" | "disabled" | "not_exposed";
+  exposure_policy: "MCP_ENABLED" | "MCP_DISABLED" | "REST_ADMIN_ONLY";
+  // FG 4-5 신규
+  default_enabled?: boolean;
+  requires?: string[];
+  preferred_use?: string;
+  policy_profile?: "read_safe" | "write_audited" | "admin_only" | "experimental";
+  streaming_supported?: boolean;
+  is_mcp_exposed: boolean;
+  authentication?: Record<string, unknown>;
+  inputSchema?: Record<string, unknown>;
+}
+
+export interface AdminMcpManifest {
+  tools: AdminMcpToolEntry[];
+  extensions: Array<Record<string, unknown>>;
+}
+
+export const mcpManifestApi = {
+  /**
+   * `GET /api/v1/admin/mcp/manifest` — 8 MCP 도구의 전체 manifest 반환.
+   *
+   * Admin UI 가 동적 fetch — `KNOWN_MCP_TOOLS` 정적 상수 제거 (FG 4-5 §2.1.6).
+   * `default_enabled` / `policy_profile` 등 운영자 전용 필드 포함.
+   */
+  get: () =>
+    api.get<SingleResponse<AdminMcpManifest>>("/api/v1/admin/mcp/manifest"),
 };
 
 export const proposalsApi = {

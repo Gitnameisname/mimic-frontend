@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { scopeProfilesApi } from "@/lib/api/s2admin";
+import { scopeProfilesApi, mcpManifestApi, type AdminMcpToolEntry } from "@/lib/api/s2admin";
 import type { ScopeProfile, ScopeProfileDetail, ScopeEntry, FilterExpression } from "@/types/s2admin";
 import { cn } from "@/lib/utils";
 import { FORM_ERROR_INLINE, FORM_ERROR_BANNER } from "@/lib/styles/tokens";
@@ -209,6 +209,169 @@ function AddScopeModal({
   );
 }
 
+// ─── MCP 도구 화이트리스트 토글 (S3 Phase 4 FG 4-0 §2.1.6) ───
+
+/**
+ * S3 Phase 4 FG 4-5 (2026-04-28): MCP 도구 목록은 `/api/v1/admin/mcp/manifest`
+ * endpoint 동적 fetch — `KNOWN_MCP_TOOLS` 정적 상수 제거 (drift 방지).
+ *
+ * 운영자 전용 manifest 의 전체 필드 (`default_enabled` / `policy_profile` /
+ * `requires` / `preferred_use` / `streaming_supported`) 사용.
+ */
+
+function _policyProfileBadge(profile: AdminMcpToolEntry["policy_profile"]) {
+  switch (profile) {
+    case "read_safe":
+      return { label: "read_safe", className: "text-green-700 bg-green-50" };
+    case "write_audited":
+      return { label: "write_audited", className: "text-orange-700 bg-orange-50" };
+    case "admin_only":
+      return { label: "admin_only", className: "text-purple-700 bg-purple-50" };
+    case "experimental":
+      return { label: "experimental", className: "text-yellow-700 bg-yellow-50" };
+    default:
+      return null;
+  }
+}
+
+function AllowedToolsToggleGroup({
+  allowedTools,
+  disabled,
+  isError,
+  errorMessage,
+  isSuccess,
+  onChange,
+}: {
+  allowedTools: string[];
+  disabled: boolean;
+  isError: boolean;
+  errorMessage: string | null;
+  isSuccess: boolean;
+  onChange: (next: string[]) => void;
+}) {
+  // S3 Phase 4 FG 4-5: 동적 manifest fetch
+  const manifestQ = useQuery({
+    queryKey: ["admin", "mcp-manifest"],
+    queryFn: () => mcpManifestApi.get(),
+  });
+
+  const allowedSet = new Set(allowedTools);
+  const toggle = (toolName: string) => {
+    const next = new Set(allowedSet);
+    if (next.has(toolName)) {
+      next.delete(toolName);
+    } else {
+      next.add(toolName);
+    }
+    onChange(Array.from(next).sort());
+  };
+  const isDefaultDeny = allowedTools.length === 0;
+
+  // manifest 의 노출 도구만 표시 (manifest.is_mcp_exposed=true)
+  const exposedTools: AdminMcpToolEntry[] = (manifestQ.data?.data?.tools ?? []).filter(
+    (t) => t.is_mcp_exposed,
+  );
+
+  return (
+    <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-bold text-gray-900">MCP 도구 화이트리스트</h3>
+        {isDefaultDeny && (
+          <span
+            className="text-xs font-semibold text-red-700 bg-red-50 px-2 py-0.5 rounded"
+            role="status"
+            aria-label="default-deny 상태"
+          >
+            default-deny
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-gray-500 mb-3">
+        에이전트가 호출 가능한 MCP 도구 목록. 빈 배열이면 모든 MCP 도구 호출이 거부됩니다 (default-deny).
+        체크 변경은 즉시 저장되며 다음 도구 호출부터 반영됩니다.
+      </p>
+      {manifestQ.isLoading ? (
+        <div className="text-xs text-gray-500" role="status">manifest 불러오는 중...</div>
+      ) : manifestQ.isError ? (
+        <div className="text-xs text-red-600" role="alert">
+          MCP 도구 manifest 를 불러오지 못했습니다.{" "}
+          <button
+            type="button"
+            onClick={() => manifestQ.refetch()}
+            className="underline font-semibold"
+          >
+            다시 시도
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {exposedTools.map((tool) => {
+            const checked = allowedSet.has(tool.name);
+            const profileBadge = _policyProfileBadge(tool.policy_profile);
+            return (
+              <label
+                key={tool.name}
+                className={cn(
+                  "flex items-start gap-3 cursor-pointer p-2 rounded",
+                  disabled && "opacity-60 cursor-wait",
+                )}
+                title={tool.preferred_use ?? undefined}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={disabled}
+                  onChange={() => toggle(tool.name)}
+                  className="mt-0.5 w-4 h-4"
+                  aria-label={`도구 ${tool.name} 허용`}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-mono font-medium text-gray-900">{tool.name}</span>
+                    <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
+                      {tool.risk_tier}
+                    </span>
+                    <span className="text-xs text-gray-500">{tool.maturity}</span>
+                    {profileBadge && (
+                      <span className={cn("text-xs font-semibold px-1.5 py-0.5 rounded", profileBadge.className)}>
+                        {profileBadge.label}
+                      </span>
+                    )}
+                    {tool.default_enabled && (
+                      <span className="text-xs text-gray-500" title="신규 ScopeProfile 의 use_defaults=True 시 자동 등록">
+                        ★ default
+                      </span>
+                    )}
+                    {tool.streaming_supported && (
+                      <span className="text-xs text-gray-500" title="SSE 스트리밍 가능">
+                        ⤓ stream
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-600 mt-0.5">{tool.description}</div>
+                  {tool.requires && tool.requires.length > 0 && (
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      requires: {tool.requires.join(", ")}
+                    </div>
+                  )}
+                </div>
+              </label>
+            );
+          })}
+        </div>
+      )}
+      {isError && (
+        <div className="text-xs text-red-600 mt-2" role="alert">
+          {errorMessage ?? "도구 화이트리스트를 저장하지 못했습니다."}
+        </div>
+      )}
+      {isSuccess && (
+        <div className="text-xs text-green-700 mt-2">저장되었습니다.</div>
+      )}
+    </div>
+  );
+}
+
 // ─── Scope Profile 상세 패널 ───
 
 function ScopeProfileDetailPanel({
@@ -250,8 +413,19 @@ function ScopeProfileDetailPanel({
     },
   });
 
+  // S3 Phase 4 FG 4-0 §2.1.6 (2026-04-28): allowed_tools 토글 (MCP tool-level ACL)
+  const updateAllowedToolsMut = useMutation({
+    mutationFn: (next: string[]) =>
+      scopeProfilesApi.update(profile.id, { allowed_tools: next }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "scope-profiles", profile.id] });
+      qc.invalidateQueries({ queryKey: ["admin", "scope-profiles"] });
+    },
+  });
+
   const detail: ScopeProfileDetail | undefined = detailQ.data?.data;
   const exposeViewers = Boolean(detail?.settings?.expose_viewers);
+  const allowedTools = detail?.allowed_tools ?? [];
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40">
@@ -307,6 +481,16 @@ function ScopeProfileDetailPanel({
               </div>
             </label>
           </div>
+
+          {/* S3 Phase 4 FG 4-0 §2.1.6: MCP 도구 화이트리스트 */}
+          <AllowedToolsToggleGroup
+            allowedTools={allowedTools}
+            disabled={detailQ.isLoading || updateAllowedToolsMut.isPending}
+            isError={updateAllowedToolsMut.isError}
+            errorMessage={updateAllowedToolsMut.error instanceof Error ? updateAllowedToolsMut.error.message : null}
+            isSuccess={updateAllowedToolsMut.isSuccess}
+            onChange={(next) => updateAllowedToolsMut.mutate(next)}
+          />
 
           {/* Scope 목록 */}
           <div>
